@@ -1,7 +1,7 @@
 @import "tailwindcss";
 .required:after {
   content: " *";
-  color: red;
+  color: #dc2626;
 }
 
 #root {
@@ -9,6 +9,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  background-color: #eff6ff;
 }
 
 .logo {
@@ -18,10 +19,10 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #3b82f6aa);
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em #60a5faaa);
 }
 
 @keyframes logo-spin {
@@ -41,8 +42,11 @@
 
 .card {
   padding: 2em;
+  background-color: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
 .read-the-docs {
-  color: #888;
+  color: #64748b;
 }
