@@ -3,9 +3,14 @@ from .models import User, Token
 
 
 class UserSerializer(serializers.ModelSerializer):
+    role = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
-        fields = ["name", "email", "password"]
+        fields = ["name", "email", "password", "role"]
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 
 class TokenSerializer(serializers.ModelSerializer):

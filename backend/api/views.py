@@ -4,8 +4,10 @@ from django.core.mail import send_mail
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, Token
 from .serializers import UserSerializer, TokenSerializer
+from .permissions import IsAdmin
 from django.conf import settings
 from datetime import datetime, timedelta
 import hashlib
@@ -131,15 +133,19 @@ class ForgotPasswordView(APIView):
 
 class RegistrationView(APIView):
     def post(self, request, format=None):
-        request.data["password"] = make_password(
-            password=request.data["password"], salt=SALT
+        # Create a mutable copy of request.data
+        data = request.data.copy()
+        data["password"] = make_password(
+            password=data["password"], salt=SALT
         )
-        serializer = UserSerializer(data=request.data)
+        # Ensure role is always USER, regardless of input
+        data["role"] = "USER"
+        serializer = UserSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save(role="USER")
             return Response(
                 {"success": True, "message": "You are now registered on our website!"},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_201_CREATED,
             )
         else:
             error_msg = ""
@@ -147,26 +153,129 @@ class RegistrationView(APIView):
                 error_msg += serializer.errors[key][0]
             return Response(
                 {"success": False, "message": error_msg},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
 
 class LoginView(APIView):
     def post(self, request, format=None):
-        email = request.data["email"]
-        password = request.data["password"]
-        hashed_password = make_password(password=password, salt=SALT)
-        user = User.objects.get(email=email)
-        if user is None or user.password != hashed_password:
+        try:
+            email = request.data["email"]
+            password = request.data["password"]
+            hashed_password = make_password(password=password, salt=SALT)
+            user = User.objects.get(email=email)
+            if user is None or user.password != hashed_password:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "Invalid Login Credentials!",
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            else:
+                # Generate JWT tokens
+                refresh = RefreshToken()
+                refresh['user_id'] = user.id
+                refresh['email'] = user.email
+                refresh['role'] = user.role
+                
+                access_token = refresh.access_token
+                access_token['user_id'] = user.id
+                access_token['email'] = user.email
+                access_token['role'] = user.role
+                
+                return Response(
+                    {
+                        "success": True,
+                        "message": "You are now logged in!",
+                        "access": str(access_token),
+                        "refresh": str(refresh),
+                        "user": {
+                            "id": user.id,
+                            "name": user.name,
+                            "email": user.email,
+                            "role": user.role,
+                        },
+                    },
+                    status=status.HTTP_200_OK,
+                )
+        except User.DoesNotExist:
             return Response(
                 {
                     "success": False,
                     "message": "Invalid Login Credentials!",
                 },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+
+class PromoteUserView(APIView):
+    """
+    Endpoint to promote a user to ADMIN role.
+    Only accessible by users with ADMIN role.
+    """
+    permission_classes = [IsAdmin]
+
+    def post(self, request, format=None):
+        """
+        Promote a user to ADMIN role.
+        Requires: {"user_id": <user_id>} in request body
+        """
+        try:
+            user_id = request.data.get("user_id")
+            if not user_id:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "user_id is required",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            try:
+                user_to_promote = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "User not found",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # Check if user is already an admin
+            if user_to_promote.role == "ADMIN":
+                return Response(
+                    {
+                        "success": False,
+                        "message": "User is already an admin",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Promote user to admin
+            user_to_promote.role = "ADMIN"
+            user_to_promote.save()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": f"User {user_to_promote.email} has been promoted to admin",
+                    "user": {
+                        "id": user_to_promote.id,
+                        "name": user_to_promote.name,
+                        "email": user_to_promote.email,
+                        "role": user_to_promote.role,
+                    },
+                },
                 status=status.HTTP_200_OK,
             )
-        else:
+
+        except Exception as e:
             return Response(
-                {"success": True, "message": "You are now logged in!"},
-                status=status.HTTP_200_OK,
+                {
+                    "success": False,
+                    "message": f"An error occurred: {str(e)}",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
