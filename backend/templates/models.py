@@ -18,6 +18,10 @@ class Template(models.Model):
     
     # Configuration for both types (variables list, etc.)
     config = models.JSONField(default=dict, blank=True)
+    
+    # Phase 4 additions
+    fingerprint_config = models.JSONField(default=dict, blank=True, help_text="Template-specific fingerprinting rules")
+    available_variables = models.JSONField(default=list, blank=True, help_text="List of variables found in the template")
 
     def __str__(self):
         return self.name
