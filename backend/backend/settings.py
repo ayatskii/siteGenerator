@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "languages",
     "tokens",
     "prompts",
+    "templates",
 ]
 
 MIDDLEWARE = [
