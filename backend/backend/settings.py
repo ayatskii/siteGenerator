@@ -22,6 +22,11 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
+    "affiliates",
+    "media_library",
+    "languages",
+    "tokens",
+    "prompts",
 ]
 
 MIDDLEWARE = [

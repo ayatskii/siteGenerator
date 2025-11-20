@@ -14,8 +14,8 @@ class User(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     role = models.CharField(max_length=20, choices=[("USER", "user"), ("ADMIN", "admin")], default="USER")
+    default_media_folder = models.ForeignKey('media_library.MediaFolder', on_delete=models.SET_NULL, null=True, blank=True, related_name='default_for_users')
+    preferences = models.JSONField(default=dict, blank=True)
     
     def __str__(self):
         return self.name
-    
-    
