@@ -15,10 +15,33 @@ class Site(models.Model):
     brand_name = models.CharField(max_length=255, blank=True)
     logo_url = models.URLField(blank=True)
     favicon_url = models.URLField(blank=True)
+    geo_targeting = models.CharField(max_length=100, blank=True, help_text="Optional region for optimization")
     
-    # Settings
+    # Template & Fingerprinting
     template = models.ForeignKey('templates.Template', on_delete=models.SET_NULL, null=True, blank=True)
+    fingerprint_type = models.CharField(max_length=50, default='random_class', choices=[
+        ('random_class', 'Random Class Names'),
+        ('preset_scheme', 'Preset Naming Scheme'),
+        ('wordpress', 'WordPress Footprint'),
+        ('other_cms', 'Other CMS Footprint'),
+    ])
+    
+    # Affiliate
     affiliate_link = models.ForeignKey('affiliates.AffiliateLink', on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # SEO & Cloudflare
+    allow_indexing = models.BooleanField(default=True, help_text="If false, adds noindex meta tag")
+    redirect_404_to_homepage = models.BooleanField(default=False)
+    force_www = models.BooleanField(default=False)
+    
+    # Optimization
+    page_speed_optimization = models.BooleanField(default=False, help_text="Enable image optimization and lazy loading")
+    
+    # Advanced Config
+    microdata_settings = models.JSONField(default=dict, blank=True)
+    header_cta_config = models.JSONField(default=dict, blank=True)
+    footer_images = models.JSONField(default=list, blank=True)
+    custom_head_html = models.TextField(blank=True, help_text="Custom HTML for <head> section")
     
     def __str__(self):
         return self.name

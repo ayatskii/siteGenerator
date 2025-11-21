@@ -7,4 +7,5 @@ urlpatterns = [
     path('api/', include('templates.urls')),
     path('api/', include('api.urls')),
     path('api/media/', include('media_library.urls')),
+    path('api/sites/', include('sites.urls')),
 ]
