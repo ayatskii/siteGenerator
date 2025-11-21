@@ -1,7 +1,8 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from .models import User
+from rest_framework_simplejwt.exceptions import InvalidToken
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class CustomJWTAuthentication(JWTAuthentication):
     """
@@ -22,8 +23,8 @@ class CustomJWTAuthentication(JWTAuthentication):
         except User.DoesNotExist:
             raise InvalidToken('User not found')
 
-        if not user:
-            raise InvalidToken('User not found')
+        if not user.is_active:
+            raise InvalidToken('User is inactive')
 
         return user
 
