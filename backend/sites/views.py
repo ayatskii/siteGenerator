@@ -2,8 +2,8 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
-from .models import Site, Page
-from .serializers import SiteCreateSerializer
+from .models import Site, Page, Block, SwiperPreset
+from .serializers import SiteCreateSerializer, PageSerializer, BlockSerializer, SwiperPresetSerializer
 from tokens.models import APIToken
 from templates.models import Template
 from affiliates.models import AffiliateLink
@@ -97,3 +97,114 @@ class SiteViewSet(viewsets.ModelViewSet):
             return Response({'status': 'success', 'site_id': site.id}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PageViewSet(viewsets.ModelViewSet):
+    serializer_class = PageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter pages by site if site_id is provided in query params
+        site_id = self.request.query_params.get('site_id')
+        if site_id:
+            return Page.objects.filter(site__id=site_id, site__owner=self.request.user)
+        # Otherwise return all pages for sites owned by user
+        return Page.objects.filter(site__owner=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        page = self.get_object()
+        
+        # Create a copy
+        page.pk = None
+        page.id = None
+        page.slug = f"{page.slug}-copy"
+        page.title = f"{page.title} (Copy)"
+        page.published = False # Set to draft
+        
+        # Ensure unique slug
+        counter = 1
+        original_slug = page.slug
+        while Page.objects.filter(site=page.site, slug=page.slug).exists():
+            page.slug = f"{original_slug}-{counter}"
+            counter += 1
+            
+        page.save()
+        
+        # Correct logic for duplicating blocks:
+        original_page = Page.objects.get(pk=pk)
+        for block in original_page.blocks.all():
+            block.pk = None
+            block.id = None
+            block.page = page
+            block.save()
+
+        serializer = self.get_serializer(page)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class BlockViewSet(viewsets.ModelViewSet):
+    serializer_class = BlockSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter blocks by page if page_id is provided
+        page_id = self.request.query_params.get('page_id')
+        if page_id:
+            return Block.objects.filter(page__id=page_id, page__site__owner=self.request.user)
+        return Block.objects.filter(page__site__owner=self.request.user)
+
+    @action(detail=False, methods=['post'])
+    def reorder(self, request):
+        """
+        Reorder blocks. Expects a list of objects with 'id' and 'order'.
+        """
+        blocks_data = request.data.get('blocks', [])
+        if not blocks_data:
+            return Response({'error': 'No blocks provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify ownership and update
+        for item in blocks_data:
+            block_id = item.get('id')
+            new_order = item.get('order')
+            if block_id is not None and new_order is not None:
+                try:
+                    block = Block.objects.get(id=block_id, page__site__owner=request.user)
+                    block.order = new_order
+                    block.save()
+                except Block.DoesNotExist:
+                    continue # Skip invalid blocks or blocks not owned by user
+
+        return Response({'status': 'success'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """
+        Duplicate a block.
+        """
+        try:
+            block = self.get_object()
+            block.pk = None
+            block.id = None
+            # Put it after the original block
+            block.order = block.order + 1 
+            block.save()
+            
+            # Shift subsequent blocks down? 
+            # Ideally yes, but for simplicity let's just save it. 
+            # The frontend usually handles reordering or we can implement a shift logic here.
+            # Let's do a simple shift.
+            subsequent_blocks = Block.objects.filter(page=block.page, order__gte=block.order).exclude(id=block.id)
+            for b in subsequent_blocks:
+                b.order += 1
+                b.save()
+
+            serializer = self.get_serializer(block)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class SwiperPresetViewSet(viewsets.ModelViewSet):
+    serializer_class = SwiperPresetSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return SwiperPreset.objects.filter(site__owner=self.request.user)

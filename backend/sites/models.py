@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -51,8 +52,18 @@ class Page(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255)
     description = models.TextField(blank=True)
-    h1 = models.CharField(max_length=255, blank=True)
+    # SEO Fields
+    meta_title = models.CharField(max_length=60, blank=True, help_text="Max 60 chars recommended")
+    meta_description = models.CharField(max_length=160, blank=True, help_text="Max 160 chars recommended")
+    h1_heading = models.CharField(max_length=255, blank=True)
+    use_h1_in_hero = models.BooleanField(default=False, help_text="If checked, H1 renders in hero block")
     canonical_url = models.URLField(blank=True)
+    custom_head_html = models.TextField(blank=True, help_text="Custom HTML for <head> section")
+
+    # Content Generation Metadata
+    primary_keywords = models.TextField(blank=True, help_text="One keyword per line")
+    lsi_keywords = models.TextField(blank=True, help_text="Latent Semantic Index keywords, one per line")
+
     published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -68,6 +79,7 @@ class Block(models.Model):
         ('hero', 'Hero Section'),
         ('article', 'Article'),
         ('image', 'Image'),
+        ('text_image', 'Text + Image'),
         ('cta', 'Call to Action'),
         ('faq', 'FAQ'),
         ('swiper', 'Swiper/Slider'),
@@ -80,8 +92,8 @@ class Block(models.Model):
     content = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
-        ordering = ['order']
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.page.title} - {self.get_type_display()}"
@@ -103,3 +115,14 @@ class Deployment(models.Model):
 
     def __str__(self):
         return f"{self.site.name} - {self.created_at} ({self.status})"
+
+class SwiperPreset(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='swiper_presets')
+    name = models.CharField(max_length=255)
+    items = models.JSONField(default=list, help_text="List of items with image, title, etc.")
+    button_text = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.site.name} - {self.name}"
