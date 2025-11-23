@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 import api from "./services/api";
 
-import AppNavBar from "./components/AppNavBar";
+import AppNavBar from "./components/AppNavbar";
 import SidebarLayout from "./components/SidebarLayout";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
