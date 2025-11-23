@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import api from "../services/api";
 import MediaLibrarySelector from "../components/MediaLibrarySelector";
 
 const CreateSite = () => {
@@ -42,21 +43,20 @@ const CreateSite = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const tokenRes = await axios.get("http://localhost:8000/api/tokens/");
-        const templateRes = await axios.get(
-          "http://localhost:8000/api/templates/"
-        );
-        // const affiliateRes = await axios.get('http://localhost:8000/api/affiliates/'); // Assuming endpoint exists
+        const tokenRes = await api.get("/api/tokens/");
+        const templateRes = await api.get("/api/templates/");
+        // const affiliateRes = await api.get('/api/affiliates/');
 
         setTokens(tokenRes.data.filter((t) => t.service_type === "cloudflare"));
         setTemplates(templateRes.data);
         // setAffiliateLinks(affiliateRes.data);
       } catch (error) {
         console.error("Error fetching data", error);
+        toast.error(t('createSite.loading') + " failed");
       }
     };
     fetchData();
-  }, []);
+  }, [t]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -90,22 +90,15 @@ const CreateSite = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/sites/create_site/",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        }
-      );
+      const response = await api.post("/api/sites/create_site/", formData);
+      
       if (response.data.status === "success") {
-        alert(t('createSite.success'));
-        navigate("/pages"); // Redirect to pages view
+        toast.success(t('createSite.success'));
+        navigate("/sites-list"); // Redirect to sites list
       }
     } catch (error) {
       console.error("Error creating site", error);
-      alert(
+      toast.error(
         t('createSite.error') + ": " +
           (error.response?.data?.error || error.message)
       );
@@ -117,12 +110,12 @@ const CreateSite = () => {
   // Render Steps
   const renderStep1 = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">
+      <h2 className="text-2xl font-bold text-gray-900">
         {t('createSite.step1Title')}
       </h2>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300">
+        <label className="block text-sm font-medium text-gray-700">
           {t('createSite.domainName')}
         </label>
         <input
@@ -131,42 +124,42 @@ const CreateSite = () => {
           value={formData.domain}
           onChange={handleInputChange}
           placeholder="example.com"
-          className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+          className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
         />
-        <p className="text-xs text-gray-400 mt-1">
+        <p className="text-xs text-gray-500 mt-1">
           {t('createSite.enterDomain')}
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           {t('createSite.selectToken')}
         </label>
-        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-          <table className="min-w-full divide-y divide-gray-700">
-            <thead className="bg-gray-800">
+        <div className="overflow-hidden shadow ring-1 ring-gray-200 sm:rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                 >
                   {t('createSite.select')}
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                 >
                   {t('createSite.tokenName')}
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
                 >
                   {t('sites.actions')}
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-gray-700 divide-y divide-gray-600">
+            <tbody className="bg-white divide-y divide-gray-200">
               {tokens.map((token) => (
                 <tr key={token.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -178,7 +171,7 @@ const CreateSite = () => {
                       className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-200">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {token.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -188,7 +181,7 @@ const CreateSite = () => {
                           "ns1.cloudflare.com\nns2.cloudflare.com"
                         )
                       }
-                      className="text-indigo-400 hover:text-indigo-300"
+                      className="text-indigo-600 hover:text-indigo-500"
                     >
                       {t('createSite.copyNS')}
                     </button>
@@ -204,7 +197,7 @@ const CreateSite = () => {
         <button
           onClick={() => setStep(2)}
           disabled={!formData.domain || !formData.cloudflare_token_id}
-          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-900 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
           {t('createSite.continue')}
         </button>
@@ -214,16 +207,16 @@ const CreateSite = () => {
 
   const renderStep2 = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">
+      <h2 className="text-2xl font-bold text-gray-900">
         {t('createSite.step2Title')}
       </h2>
 
       {/* Brand Settings */}
-      <div className="bg-gray-800 p-4 rounded-md">
-        <h3 className="text-lg font-medium text-white mb-4">{t('createSite.brandSettings')}</h3>
+      <div className="bg-gray-50 p-4 rounded-md">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('createSite.brandSettings')}</h3>
         <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.brandName')}
             </label>
             <input
@@ -231,18 +224,18 @@ const CreateSite = () => {
               name="brand_name"
               value={formData.brand_name}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             />
           </div>
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.language')}
             </label>
             <select
               name="language"
               value={formData.language}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             >
               <option value="en-US">English (US)</option>
               <option value="es-ES">Spanish</option>
@@ -253,7 +246,7 @@ const CreateSite = () => {
 
           {/* Logo */}
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.logoUrl')}
             </label>
             <div className="mt-1 flex gap-2">
@@ -263,7 +256,7 @@ const CreateSite = () => {
                 value={formData.logo_url}
                 onChange={handleInputChange}
                 placeholder="https://..."
-                className="block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                className="block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
               />
               <button
                 type="button"
@@ -271,7 +264,7 @@ const CreateSite = () => {
                   setMediaSelectorTarget('logo');
                   setMediaSelectorOpen(true);
                 }}
-                className="inline-flex items-center px-3 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-300 bg-gray-700 hover:bg-gray-600"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100"
               >
                 {t('common.browse')}
               </button>
@@ -280,7 +273,7 @@ const CreateSite = () => {
 
           {/* Favicon */}
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.faviconUrl')}
             </label>
             <div className="mt-1 flex gap-2">
@@ -290,7 +283,7 @@ const CreateSite = () => {
                 value={formData.favicon_url}
                 onChange={handleInputChange}
                 placeholder="https://..."
-                className="block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+                className="block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
               />
               <button
                 type="button"
@@ -298,17 +291,17 @@ const CreateSite = () => {
                   setMediaSelectorTarget('favicon');
                   setMediaSelectorOpen(true);
                 }}
-                className="inline-flex items-center px-3 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-300 bg-gray-700 hover:bg-gray-600"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100"
               >
                 {t('common.browse')}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">{t('createSite.svgRecommended')}</p>
+            <p className="text-xs text-gray-500 mt-1">{t('createSite.svgRecommended')}</p>
           </div>
 
           {/* Copyright Year */}
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.copyrightYear')}
             </label>
             <input
@@ -316,27 +309,27 @@ const CreateSite = () => {
               name="copyright_year"
               value={formData.copyright_year}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             />
           </div>
         </div>
       </div>
 
       {/* Template Selection */}
-      <div className="bg-gray-800 p-4 rounded-md">
-        <h3 className="text-lg font-medium text-white mb-4">
+      <div className="bg-gray-50 p-4 rounded-md">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
           {t('createSite.templateAndFingerprint')}
         </h3>
         <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.template')}
             </label>
             <select
               name="template_id"
               value={formData.template_id || ""}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             >
               <option value="">{t('createSite.selectTemplate')}</option>
               {templates.map((t) => (
@@ -347,14 +340,14 @@ const CreateSite = () => {
             </select>
           </div>
           <div className="sm:col-span-3">
-            <label className="block text-sm font-medium text-gray-300">
+            <label className="block text-sm font-medium text-gray-700">
               {t('createSite.fingerprintType')}
             </label>
             <select
               name="fingerprint_type"
               value={formData.fingerprint_type}
               onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
             >
               <option value="random_class">{t('createSite.fingerprintRandom')}</option>
               <option value="preset_scheme">{t('createSite.fingerprintPreset')}</option>
@@ -366,8 +359,8 @@ const CreateSite = () => {
       </div>
 
       {/* SEO & Cloudflare */}
-      <div className="bg-gray-800 p-4 rounded-md">
-        <h3 className="text-lg font-medium text-white mb-4">
+      <div className="bg-gray-50 p-4 rounded-md">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
           {t('createSite.seoAndCloudflare')}
         </h3>
         <div className="space-y-4">
@@ -382,7 +375,7 @@ const CreateSite = () => {
               />
             </div>
             <div className="ml-3 text-sm">
-              <label className="font-medium text-gray-300">
+              <label className="font-medium text-gray-700">
                 {t('createSite.allowIndexing')}
               </label>
               <p className="text-gray-500">
@@ -401,7 +394,7 @@ const CreateSite = () => {
               />
             </div>
             <div className="ml-3 text-sm">
-              <label className="font-medium text-gray-300">
+              <label className="font-medium text-gray-700">
                 {t('createSite.redirect404')}
               </label>
             </div>
@@ -417,7 +410,7 @@ const CreateSite = () => {
               />
             </div>
             <div className="ml-3 text-sm">
-              <label className="font-medium text-gray-300">
+              <label className="font-medium text-gray-700">
                 {t('createSite.forceWWW')}
               </label>
             </div>
@@ -428,14 +421,14 @@ const CreateSite = () => {
       <div className="flex justify-between">
         <button
           onClick={() => setStep(1)}
-          className="py-2 px-4 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-300 hover:bg-gray-700"
+          className="py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 hover:bg-white"
         >
           {t('common.back')}
         </button>
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+          className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-900 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
           {loading ? t('createSite.creating') : t('createSite.submit')}
         </button>
@@ -444,7 +437,7 @@ const CreateSite = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
