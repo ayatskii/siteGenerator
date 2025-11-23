@@ -76,11 +76,42 @@
     "deployedSites": "Развернуто сайтов",
     "storageUsed": "Использовано места",
     "quickActions": "Быстрые действия",
+    "recentActivity": "Последняя активность",
+    "noActivity": "Нет последней активности",
+    "createFirstSite": "Создать ваш первый сайт",
     "actions": {
+      "createSite": "Создать новый сайт",
+      "createSiteDesc": "Запустите новый сайт с нашим конструктором",
+      "manageTemplates": "Управление шаблонами",
+      "manageTemplatesDesc": "Загружайте и организуйте ваши шаблоны сайтов",
+      "mediaLibrary": "Медиатека",
+      "mediaLibraryDesc": "Загружайте и управляйте вашими медиафайлами",
+      "viewAnalytics": "Просмотр аналитики",
+      "viewAnalyticsDesc": "Отслеживайте производительность вашего сайта"
+    }
+  },
+  "sites": {
+    "title": "Сайты",
+    "subtitle": "Управляйте всеми вашими сайтами",
+    "createNew": "Создать новый сайт",
+    "empty": "Пока нет сайтов",
+    "getStarted": "Начать",
+    "getStartedDesc": "Создайте ваш первый сайт, чтобы начать",
+    "domain": "Домен",
+    "status": "Статус",
+    "created": "Создано",
+    "actions": "Действия",
+    "loadError": "Не удалось загрузить сайты",
+    "deleteSuccess": "Сайт успешно удален",
     "deleteError": "Не удалось удалить сайт",
     "deleteConfirm": "Вы уверены, что хотите удалить этот сайт?",
     "statusDeployed": "Развернут",
-    "statusDraft": "Черновик"
+    "statusDraft": "Черновик",
+   "searchPlaceholder": "Поиск сайтов...",
+    "noSites": "Сайты не найдены",
+    "noSitesYet": "У вас еще нет сайтов",
+    "tryDifferentSearch": "Попробуйте другой поисковый запрос",
+    "createFirst": "Создать первый сайт"
   },
   "createSite": {
     "title": "Создать новый сайт",

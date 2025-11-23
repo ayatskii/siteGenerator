@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "./ui";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 /**
  * AppNavBar - Public-facing navigation for non-authenticated pages
@@ -31,6 +32,7 @@ const AppNavBar = (props) => {
 
           {/* Navigation Links */}
           <div className="flex items-center space-x-4">
+            <LanguageSwitcher />
             {!isLoggedIn ? (
               <>
                 <Link

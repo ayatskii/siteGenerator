@@ -39,7 +39,7 @@ const Login = (props) => {
     setErrors({});
 
     try {
-      const res = await api.post("/api/token/", {
+      const res = await api.post("/api/login/", {
         email: formData.email,
         password: formData.password,
       });

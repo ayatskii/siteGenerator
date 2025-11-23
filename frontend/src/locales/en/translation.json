@@ -76,12 +76,42 @@
     "deployedSites": "Deployed Sites",
     "storageUsed": "Storage Used",
     "quickActions": "Quick Actions",
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity",
+    "createFirstSite": "Create Your First Site",
     "actions": {
       "createSite": "Create New Site",
+      "createSiteDesc": "Launch a new website with our builder",
+      "manageTemplates": "Manage Templates",
+      "manageTemplatesDesc": "Upload and organize your site templates",
+      "mediaLibrary": "Media Library",
+      "mediaLibraryDesc": "Upload and manage your media files",
+      "viewAnalytics": "View Analytics",
+      "viewAnalyticsDesc": "Track your site performance"
+    }
+  },
+  "sites": {
+    "title": "Sites",
+    "createNew": "Create New Site",
+    "empty": "No sites yet",
+    "getStarted": "Get Started",
+    "getStartedDesc": "Create your first site to get started",
+    "domain": "Domain",
+    "status": "Status",
+    "created": "Created",
+    "actions": "Actions",
+    "loadError": "Failed to load sites",
+    "deleteSuccess": "Site deleted successfully",
     "deleteError": "Failed to delete site",
     "deleteConfirm": "Are you sure you want to delete this site?",
     "statusDeployed": "Deployed",
-    "statusDraft": "Draft"
+    "statusDraft": "Draft",
+    "subtitle": "Manage all your sites",
+    "searchPlaceholder": "Search sites...",
+    "noSites": "No sites found",
+    "noSitesYet": "You have no sites yet",
+    "tryDifferentSearch": "Try a different search",
+    "createFirst": "Create First Site"
   },
   "createSite": {
     "title": "Create New Site",

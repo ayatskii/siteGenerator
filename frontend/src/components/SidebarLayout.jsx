@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { 
   HiHome,
   HiPhotograph,
@@ -84,8 +85,11 @@ const SidebarLayout = (props) => {
       </nav>
 
       {/* User Info & Logout */}
-      <div className="p-4 border-t border-gray-200">
-        <Link to="/profile" className="flex items-center mb-3 hover:bg-gray-50 p-2 rounded-lg transition-colors">
+      <div className="p-4 border-t border-gray-200 space-y-3">
+        <div className="flex justify-center">
+          <LanguageSwitcher />
+        </div>
+        <Link to="/profile" className="flex items-center hover:bg-gray-50 p-2 rounded-lg transition-colors">
           <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
             {name ? name.substring(0, 2).toUpperCase() : email ? email.substring(0, 2).toUpperCase() : "U"}
           </div>
