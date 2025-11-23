@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import hashlib
 import uuid
 from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
 
 SALT = "8b4f6b2cc1868d75ef79e5cfb8779c11b6a374bf0fce05b485581bf4e1e25b96c8c2855015de8449"
 URL = "http://localhost:3000"
@@ -63,18 +64,17 @@ class ResetPasswordView(APIView):
             )
         else:
             token_obj.is_used = True
-            hashed_password = make_password(password=password, salt=SALT)
-            ret_code = User.objects.filter(
-                id=user_id).update(password=hashed_password)
-            if ret_code:
-                token_obj.save()
-                return Response(
-                    {
-                        "success": True,
-                        "message": "Your password reset was successfully!",
-                    },
-                    status=status.HTTP_200_OK,
-                )
+            user = User.objects.get(id=user_id)
+            user.set_password(password)
+            user.save()
+            token_obj.save()
+            return Response(
+                {
+                    "success": True,
+                    "message": "Your password reset was successfully!",
+                },
+                status=status.HTTP_200_OK,
+            )
 
 
 class ForgotPasswordView(APIView):
@@ -135,9 +135,6 @@ class RegistrationView(APIView):
     def post(self, request, format=None):
         # Create a mutable copy of request.data
         data = request.data.copy()
-        data["password"] = make_password(
-            password=data["password"], salt=SALT
-        )
         # Ensure role is always USER, regardless of input
         data["role"] = "USER"
         serializer = UserSerializer(data=data)
@@ -162,9 +159,9 @@ class LoginView(APIView):
         try:
             email = request.data["email"]
             password = request.data["password"]
-            hashed_password = make_password(password=password, salt=SALT)
             user = User.objects.get(email=email)
-            if user is None or user.password != hashed_password:
+            
+            if user is None or not user.check_password(password):
                 return Response(
                     {
                         "success": False,
@@ -192,7 +189,7 @@ class LoginView(APIView):
                         "refresh": str(refresh),
                         "user": {
                             "id": user.id,
-                            "name": user.name,
+                            "name": user.get_full_name() or user.email,
                             "email": user.email,
                             "role": user.role,
                         },
@@ -263,7 +260,7 @@ class PromoteUserView(APIView):
                     "message": f"User {user_to_promote.email} has been promoted to admin",
                     "user": {
                         "id": user_to_promote.id,
-                        "name": user_to_promote.name,
+                        "name": user_to_promote.get_full_name() or user_to_promote.email,
                         "email": user_to_promote.email,
                         "role": user_to_promote.role,
                     },
@@ -279,3 +276,25 @@ class PromoteUserView(APIView):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UserProfileView(APIView):
+    """
+    Endpoint to get the current authenticated user's profile.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        user = request.user
+        return Response(
+            {
+                "success": True,
+                "user": {
+                    "id": user.id,
+                    "name": user.get_full_name() or user.email,
+                    "email": user.email,
+                    "role": user.role,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )

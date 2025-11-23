@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import MediaLibrarySelector from "../components/MediaLibrarySelector";
 
 const CreateSite = () => {
   const navigate = useNavigate();
@@ -9,6 +10,8 @@ const CreateSite = () => {
   const [tokens, setTokens] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [affiliateLinks, setAffiliateLinks] = useState([]);
+  const [mediaSelectorOpen, setMediaSelectorOpen] = useState(false);
+  const [mediaSelectorTarget, setMediaSelectorTarget] = useState(null); // 'logo' or 'favicon'
 
   // Form State
   const [formData, setFormData] = useState({
@@ -26,6 +29,7 @@ const CreateSite = () => {
     page_speed_optimization: false,
     logo_url: "",
     favicon_url: "",
+    copyright_year: new Date().getFullYear(),
     pages_structure: [],
     footer_images: [],
     header_cta_config: {},
@@ -68,6 +72,18 @@ const CreateSite = () => {
     navigator.clipboard.writeText(text);
     alert("Copied to clipboard!");
   };
+
+  const handleMediaSelect = (asset) => {
+    const assetUrl = asset.file || asset.file_url;
+    if (mediaSelectorTarget === 'logo') {
+      setFormData(prev => ({ ...prev, logo_url: assetUrl }));
+    } else if (mediaSelectorTarget === 'favicon') {
+      setFormData(prev => ({ ...prev, favicon_url: assetUrl }));
+    }
+    setMediaSelectorOpen(false);
+    setMediaSelectorTarget(null);
+  };
+
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -232,6 +248,75 @@ const CreateSite = () => {
               {/* Add more languages */}
             </select>
           </div>
+
+          {/* Logo */}
+          <div className="sm:col-span-3">
+            <label className="block text-sm font-medium text-gray-300">
+              Logo URL
+            </label>
+            <div className="mt-1 flex gap-2">
+              <input
+                type="text"
+                name="logo_url"
+                value={formData.logo_url}
+                onChange={handleInputChange}
+                placeholder="https://..."
+                className="block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setMediaSelectorTarget('logo');
+                  setMediaSelectorOpen(true);
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-300 bg-gray-700 hover:bg-gray-600"
+              >
+                Browse
+              </button>
+            </div>
+          </div>
+
+          {/* Favicon */}
+          <div className="sm:col-span-3">
+            <label className="block text-sm font-medium text-gray-300">
+              Favicon URL
+            </label>
+            <div className="mt-1 flex gap-2">
+              <input
+                type="text"
+                name="favicon_url"
+                value={formData.favicon_url}
+                onChange={handleInputChange}
+                placeholder="https://..."
+                className="block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setMediaSelectorTarget('favicon');
+                  setMediaSelectorOpen(true);
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-300 bg-gray-700 hover:bg-gray-600"
+              >
+                Browse
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">SVG recommended for auto-generation</p>
+          </div>
+
+          {/* Copyright Year */}
+          <div className="sm:col-span-3">
+            <label className="block text-sm font-medium text-gray-300">
+              Copyright Year
+            </label>
+            <input
+              type="number"
+              name="copyright_year"
+              value={formData.copyright_year}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-700 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
+            />
+          </div>
         </div>
       </div>
 
@@ -361,9 +446,21 @@ const CreateSite = () => {
       <div className="max-w-3xl mx-auto">
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
+
+        {/* Media Library Selector Modal */}
+        <MediaLibrarySelector
+          isOpen={mediaSelectorOpen}
+          onClose={() => {
+            setMediaSelectorOpen(false);
+            setMediaSelectorTarget(null);
+          }}
+          onSelect={handleMediaSelect}
+          title={`Select ${mediaSelectorTarget === 'logo' ? 'Logo' : 'Favicon'}`}
+        />
       </div>
     </div>
   );
 };
 
 export default CreateSite;
+

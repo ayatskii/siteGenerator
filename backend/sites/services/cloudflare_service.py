@@ -59,18 +59,93 @@ class CloudflareService:
         return response.json()
 
     def _get_account_id(self):
-        # Placeholder: In a real scenario, we might store the account ID with the token 
-        # or fetch it. For now, let's return None and handle it in _get_first_account_id
-        return None
+        """
+        Try to get account ID from token verification endpoint first, 
+        then fall back to listing accounts.
+        """
+        # Verify token endpoint often returns the user/account context
+        url = f"{self.BASE_URL}/user/tokens/verify"
+        try:
+            response = requests.get(url, headers=self.headers)
+            if response.status_code == 200:
+                data = response.json()
+                # Sometimes the verification response doesn't directly give account ID, 
+                # but let's check if we can get it from a standard "accounts" list if not here.
+                pass 
+        except Exception:
+            pass
+            
+        return self._get_first_account_id()
 
     def _get_first_account_id(self):
         """
         Helper to get the first account ID available to this token.
         """
         url = f"{self.BASE_URL}/accounts"
-        response = requests.get(url, headers=self.headers)
-        if response.status_code == 200:
-            data = response.json()
-            if data.get('success') and data.get('result'):
-                return data['result'][0]['id']
+        try:
+            response = requests.get(url, headers=self.headers)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success') and data.get('result'):
+                    return data['result'][0]['id']
+        except Exception as e:
+            print(f"Error fetching Cloudflare accounts: {e}")
+            
         return None
+
+    def deploy_to_pages(self, project_name, zip_path):
+        """
+        Deploy a ZIP file to Cloudflare Pages using Direct Upload.
+        """
+        account_id = self._get_account_id() or self._get_first_account_id()
+        if not account_id:
+            raise Exception("Could not retrieve Cloudflare Account ID")
+
+        # 1. Ensure Project Exists
+        self._ensure_pages_project(account_id, project_name)
+
+        # 2. Upload Deployment
+        url = f"{self.BASE_URL}/accounts/{account_id}/pages/projects/{project_name}/deployments"
+        
+        try:
+            with open(zip_path, 'rb') as f:
+                files = {
+                    'file': ('site.zip', f, 'application/zip')
+                }
+                # Note: requests automatically sets Content-Type to multipart/form-data when 'files' is passed
+                # We need to ensure we don't override it with application/json in headers
+                upload_headers = self.headers.copy()
+                upload_headers.pop('Content-Type', None)
+                
+                response = requests.post(url, headers=upload_headers, files=files)
+                
+                if response.status_code == 200:
+                    return response.json()
+                else:
+                    raise Exception(f"Deployment failed: {response.text}")
+                    
+        except Exception as e:
+            print(f"Error deploying to Cloudflare: {e}")
+            raise e
+
+    def _ensure_pages_project(self, account_id, project_name):
+        """
+        Ensure the Pages project exists.
+        """
+        url = f"{self.BASE_URL}/accounts/{account_id}/pages/projects"
+        
+        # Check if exists
+        get_url = f"{url}/{project_name}"
+        response = requests.get(get_url, headers=self.headers)
+        
+        if response.status_code == 200:
+            return response.json()
+            
+        # Create if not
+        data = {
+            "name": project_name,
+            "production_branch": "main",
+            # "source": {"type": "direct_upload"} # Not strictly needed for direct upload projects usually, but good practice
+        }
+        response = requests.post(url, headers=self.headers, json=data)
+        return response.json()

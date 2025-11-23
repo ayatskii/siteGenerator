@@ -1,110 +1,151 @@
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
-
-const URL = import.meta.env.VITE_BACKEND_URL + "/api/login";
+import { Button, Input, Card } from "../components/ui";
 
 const Login = (props) => {
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const { isLoggedIn, setIsLoggedIn, setName, setEmail } = props;
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    remember: false,
+  });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (isLoggedIn) navigate("profile");
-  });
+    if (isLoggedIn) navigate("/");
+  }, [isLoggedIn, navigate]);
 
-  const handleLogin = async (ev) => {
-    ev.preventDefault();
-    const email = ev.target.email.value;
-    const password = ev.target.password.value;
-    const formData = { email: email, password: password };
-    const res = await axios.post(URL, formData);
-    const data = res.data;
-    if (data.success === true) {
-      toast.success(data.message);
-      setIsLoggedIn(true);
-      setEmail(email);
-      navigate("/profile");
-    } else toast.error(data.message);
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+
+    try {
+      const res = await api.post("/api/login/", {
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      const data = res.data;
+      
+      if (data.success && data.access) {
+        localStorage.setItem("token", data.access);
+        toast.success(data.message || "Login successful!");
+        setIsLoggedIn(true);
+        setEmail(formData.email);
+        if (data.user?.name) setName(data.user.name);
+        navigate("/");
+      } else {
+        toast.error("Login failed: No token received");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      const msg = error.response?.data?.message || "Login failed";
+      toast.error(msg);
+      
+      // Set field-specific errors if available
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="w-full flex justify-center my-4">
-      <div className="w-full max-w-lg p-6 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
-        <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white text-center">
-          Login to your account
-        </h5>
-        <form
-          className="w-full flex max-w-md flex-col gap-4"
-          onSubmit={handleLogin}
-        >
-          <div>
-            <div className="mb-2 block">
-              <label htmlFor="email" className="text-sm font-medium required">
-                Email
-              </label>
-            </div>
-            <input
-              id="email"
-              type="email"
-              placeholder="Your Email"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              required
-            />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2 block">
-              <label
-                htmlFor="password"
-                className="text-sm font-medium required"
-              >
-                Password
-              </label>
-              <div className="text-sm">
-                <a
-                  href="forgotPassword"
-                  className="font-semibold text-blue-600 hover:text-blue-500"
-                >
-                  Forgot password?
-                </a>
-              </div>
-            </div>
-            <input
-              id="password"
-              type="password"
-              placeholder="Your Password"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              required
-            />
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <input
-              type="checkbox"
-              id="remember"
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-            />
-            <label htmlFor="remember" className="text-sm font-medium">
-              Remember me
-            </label>
-          </div>
-          
-          <button
-            type="submit"
-            className="focus:outline-none text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800"
-          >
-            Submit
-          </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Site Generator</h1>
+          <h2 className="mt-2 text-xl text-gray-600">Sign in to your account</h2>
+        </div>
 
-          <p className="text-center text-sm text-gray-500">
-            Not yet registered?{" "}
-            <a
-              href="register"
-              className="font-semibold leading-6 text-blue-600 hover:text-blue-500"
+        <Card>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <Input
+              label="Email Address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              error={errors.email}
+              required
+            />
+
+            <Input
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              error={errors.password}
+              required
+            />
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember"
+                  name="remember"
+                  type="checkbox"
+                  checked={formData.remember}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                  Remember me
+                </label>
+              </div>
+
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={loading}
             >
-              Register Here
-            </a>
-          </p>
-        </form>
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Sign up now
+                </Link>
+              </p>
+            </div>
+          </form>
+        </Card>
       </div>
     </div>
   );

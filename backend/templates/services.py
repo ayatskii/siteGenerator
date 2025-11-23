@@ -10,8 +10,10 @@ from rest_framework.exceptions import ValidationError
 from .models import Template, TemplateSection
 
 class TemplateUploadService:
-    def __init__(self, zip_file):
+    def __init__(self, zip_file, name=None, description=None):
         self.zip_file = zip_file
+        self.name_override = name
+        self.description_override = description
         self.temp_dir = os.path.join(settings.MEDIA_ROOT, 'temp', str(uuid.uuid4()))
         self.template_slug = None
 
@@ -20,6 +22,13 @@ class TemplateUploadService:
             self._extract_zip()
             self._validate_structure()
             config = self._read_config()
+            
+            # Apply overrides
+            if self.name_override:
+                config['name'] = self.name_override
+            if self.description_override:
+                config['description'] = self.description_override
+                
             self.template_slug = self._slugify(config['name'])
             
             with transaction.atomic():

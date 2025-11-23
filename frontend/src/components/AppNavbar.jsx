@@ -1,76 +1,57 @@
-import { 
-  Avatar,
-  Dropdown,
-  DropdownDivider,
-  DropdownHeader,
-  DropdownItem,
-  Navbar,
-  NavbarBrand,
-  NavbarCollapse,
-  NavbarLink,
-  NavbarToggle
-} from "flowbite-react";
-import UserIcon from "../images/user.png";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "./ui";
 
+/**
+ * AppNavBar - Public-facing navigation for non-authenticated pages
+ * Only shows on Login/Register pages
+ */
 const AppNavBar = (props) => {
-  let navigate = useNavigate();
-
-  const { isLoggedIn, setIsLoggedIn, name, setName, email, setEmail } = props;
+  const navigate = useNavigate();
+  const { isLoggedIn, setIsLoggedIn, setName, setEmail } = props;
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
-    setName(null);
-    setEmail(null);
-    navigate("/");
-    toast.success("You are successfully logged out!");
+    setName("");
+    setEmail("");
+    navigate("/login");
   };
 
   return (
-    <Navbar fluid>
-      <NavbarBrand href="https://girishgr8.github.io">
-        <img
-          src="https://media.geeksforgeeks.org/wp-content/uploads/20210224040124/JSBinCollaborativeJavaScriptDebugging6-300x160.png"
-          className="mr-3 h-6 sm:h-9"
-          alt="Flowbite React Logo"
-        />
-        <span className="self-center whitespace-nowrap text-3xl font-semibold text-blue-900 dark:text-white">
-          GeeksForGeeks
-        </span>
-      </NavbarBrand>
-      
-      {isLoggedIn && (
-        <div className="flex md:order-2">
-          <Dropdown 
-            arrowIcon={false} 
-            inline
-            label={<Avatar alt="User settings" img={UserIcon} rounded />}
-          >
-            <DropdownHeader>
-              <span className="block text-sm">{name}</span>
-              <span className="block truncate text-sm font-medium">{email}</span>
-            </DropdownHeader>
-            <DropdownItem>Settings</DropdownItem>
-            <DropdownItem>Your Orders</DropdownItem>
-            <DropdownDivider />
-            <DropdownItem onClick={handleLogout}>Log out</DropdownItem>
-          </Dropdown>
-          <NavbarToggle />
+    <nav className="bg-white border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo/Brand */}
+          <Link to="/" className="flex items-center">
+            <span className="text-2xl font-bold text-blue-600">Site Generator</span>
+          </Link>
+
+          {/* Navigation Links */}
+          <div className="flex items-center space-x-4">
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link to="/register">
+                  <Button variant="primary" size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                Sign Out
+              </Button>
+            )}
+          </div>
         </div>
-      )}
-      
-      <NavbarCollapse>
-        <NavbarLink href="/" className="text-lg">Home</NavbarLink>
-        <NavbarLink href="#" className="text-lg">About</NavbarLink>
-        <NavbarLink href="#" className="text-lg">Services</NavbarLink>
-        <NavbarLink href="#" className="text-lg">Pricing</NavbarLink>
-        <NavbarLink href="#" className="text-lg">Contact</NavbarLink>
-        {!isLoggedIn && (
-          <NavbarLink href="/login" className="text-lg">Login</NavbarLink>
-        )}
-      </NavbarCollapse>
-    </Navbar>
+      </div>
+    </nav>
   );
 };
 

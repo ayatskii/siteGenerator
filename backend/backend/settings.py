@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "prompts",
     "templates",
     "sites",
+    "analytics",
 ]
 
 MIDDLEWARE = [

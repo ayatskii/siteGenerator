@@ -1,0 +1,12 @@
+Attempting to register user: testuser4796@example.com
+
+Status Code: 201
+Content-Type: application/json
+
+Raw Response (first 500 chars):
+{"success":true,"message":"You are now registered on our website!"}
+
+JSON Response: {
+  "success": true,
+  "message": "You are now registered on our website!"
+}

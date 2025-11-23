@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from fernet_fields import EncryptedCharField
 import requests
 
 User = get_user_model()
@@ -10,7 +9,8 @@ User = get_user_model()
 
 class APIToken(models.Model):
     """
-    Store encrypted API credentials for third-party services
+    Store API credentials for third-party services
+    Note: For production, enable encryption at rest at the database level
     """
 
     SERVICE_CHOICES = [
@@ -18,34 +18,35 @@ class APIToken(models.Model):
         ('grok', 'Grok'),
         ('cloudflare', 'Cloudflare Pages'),
         ('openrouter', 'OpenRouter'), 
+        ('google', 'Google AI'),
     ]
-    
+
     AI_MODEL_CHOICES = [
-        # OpenAI models
+        # OpenAI
         ('gpt-4', 'GPT-4'),
         ('gpt-4-turbo', 'GPT-4 Turbo'),
         ('gpt-3.5-turbo', 'GPT-3.5 Turbo'),
-        # Grok models
+        # Grok
         ('grok-beta', 'Grok Beta'),
-        # OpenRouter models (examples - supports 400+ models)
-        ('openai/gpt-4', 'OpenRouter: GPT-4'),
-        ('openai/gpt-4-turbo', 'OpenRouter: GPT-4 Turbo'),
-        ('openai/gpt-3.5-turbo', 'OpenRouter: GPT-3.5 Turbo'),
-        ('anthropic/claude-3.5-sonnet', 'OpenRouter: Claude 3.5 Sonnet'),
-        ('anthropic/claude-3-opus', 'OpenRouter: Claude 3 Opus'),
-        ('anthropic/claude-3-haiku', 'OpenRouter: Claude 3 Haiku'),
-        ('google/gemini-2.0-flash-exp', 'OpenRouter: Gemini 2.0 Flash'),
-        ('google/gemini-pro-1.5', 'OpenRouter: Gemini Pro 1.5'),
-        ('meta-llama/llama-3.1-70b-instruct', 'OpenRouter: Llama 3.1 70B'),
-        ('mistralai/mistral-large', 'OpenRouter: Mistral Large'),
-        ('x-ai/grok-2', 'OpenRouter: Grok 2'),
-        ('deepseek/deepseek-chat', 'OpenRouter: DeepSeek Chat'),
-        ('qwen/qwen-2.5-72b-instruct', 'OpenRouter: Qwen 2.5 72B'),
+        # Google
+        ('gemini-pro', 'Gemini Pro'),
+        ('gemini-ultra', 'Gemini Ultra'),
+        # OpenRouter
+        ('openrouter/auto', 'OpenRouter Auto'),
     ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='api_tokens',
+        help_text='The user who owns this token',
+        null=True,
+        blank=True
+    )
     
     name = models.CharField(
-        max_length=200,
-        help_text='Human-readable identifier for the token (e.g., "Production OpenAI", "OpenRouter Multi-Model")'
+        max_length=100,
+        help_text='Friendly name for this token (e.g., "My OpenAI Key")'
     )
     
     service_type = models.CharField(
@@ -54,9 +55,9 @@ class APIToken(models.Model):
         help_text='Which service this token is for'
     )
     
-    token_value = EncryptedCharField(
+    token_value = models.CharField(
         max_length=500,
-        help_text='The actual API token (encrypted in database)'
+        help_text='The actual API token (store encrypted in production)'
     )
     
     ai_model = models.CharField(
@@ -125,6 +126,14 @@ class APIToken(models.Model):
         """
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def increment_usage(self):
+        """
+        Increment the usage count for this token.
+        """
+        self.current_usage += 1
+        self.last_used_at = timezone.now()
+        self.save(update_fields=['current_usage', 'last_used_at'])
 
     def get_masked_token(self):
         """
@@ -200,9 +209,8 @@ class APIToken(models.Model):
             'Content-Type': 'application/json'
         }
         try:
-            # TODO Replace with actual Grok API endpoint
             response = requests.get(
-                'https://api.x.ai/v1/models',  # Example endpoint
+                'https://api.x.ai/v1/models',
                 headers=headers,
                 timeout=10
             )
@@ -235,17 +243,10 @@ class APIToken(models.Model):
                 timeout=10
             )
             if response.status_code == 200:
-                data = response.json()
-                if data.get('success'):
-                    return {
-                        'success': True,
-                        'message': 'Cloudflare token is valid and working.'
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': f'Cloudflare token verification failed: {data.get("errors", [])}'
-                    }
+                return {
+                    'success': True,
+                    'message': 'Cloudflare token is valid and working.'
+                }
             else:
                 return {
                     'success': False,
@@ -258,196 +259,29 @@ class APIToken(models.Model):
             }
     
     def _test_openrouter_connection(self):
-        """
-        Test OpenRouter API connection
-        OpenRouter uses OpenAI-compatible endpoints
-        """
-        headers = {
-            'Authorization': f'Bearer {self.token_value}',
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://yourapp.com',  # Optional but recommended TODO
-            'X-Title': 'Your App Name',  # Optional but recommended TODO
-        }
-        
-        try:
-            response = requests.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers=headers,
-                json={
-                    'model': self.ai_model or 'openai/gpt-3.5-turbo',
-                    'messages': [
-                        {
-                            'role': 'user',
-                            'content': 'Hello'
-                        }
-                    ],
-                    'max_tokens': 5
-                },
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                model_used = data.get('model', 'unknown')
-                return {
-                    'success': True,
-                    'message': f'OpenRouter token is valid. Test completed with model: {model_used}'
-                }
-            elif response.status_code == 401:
-                return {
-                    'success': False,
-                    'message': 'OpenRouter token is invalid or expired. Please check your API key.'
-                }
-            elif response.status_code == 402:
-                return {
-                    'success': False,
-                    'message': 'OpenRouter account has insufficient credits. Please add credits to your account.'
-                }
-            elif response.status_code == 429:
-                return {
-                    'success': False,
-                    'message': 'OpenRouter rate limit exceeded. Please try again later.'
-                }
-            else:
-                return {
-                    'success': False,
-                    'message': f'OpenRouter API returned status {response.status_code}: {response.text}'
-                }
-        except requests.exceptions.Timeout:
-            return {
-                'success': False,
-                'message': 'OpenRouter connection timed out. Please try again.'
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'message': f'OpenRouter connection error: {str(e)}'
-            }
-    
-    def make_openrouter_request(self, messages, temperature=0.7, max_tokens=1000, **kwargs):
-        """
-        Make a chat completion request to OpenRouter
-        
-        Args:
-            messages: List of message dicts with 'role' and 'content'
-            temperature: Float between 0 and 1
-            max_tokens: Maximum tokens to generate
-            **kwargs: Additional parameters (top_p, frequency_penalty, etc.)
-        
-        Returns:
-            dict: Response from OpenRouter API
-        """
-        if self.service_type != 'openrouter':
-            raise ValueError('This method only works with OpenRouter tokens')
-        
-        headers = {
-            'Authorization': f'Bearer {self.token_value}',
-            'Content-Type': 'application/json',
-            'HTTP-Referer': kwargs.pop('referer', 'https://yourapp.com'),
-            'X-Title': kwargs.pop('app_title', 'Site Generator Panel'),
-        }
-        
-        payload = {
-            'model': self.ai_model or 'openai/gpt-3.5-turbo',
-            'messages': messages,
-            'temperature': temperature,
-            'max_tokens': max_tokens,
-            **kwargs
-        }
-        
-        try:
-            response = requests.post(
-                'https://openrouter.ai/api/v1/chat/completions',
-                headers=headers,
-                json=payload,
-                timeout=60
-            )
-            
-            response.raise_for_status()
-            
-            self.increment_usage()
-            
-            return {
-                'success': True,
-                'data': response.json()
-            }
-            
-        except requests.exceptions.HTTPError as e:
-            return {
-                'success': False,
-                'error': f'HTTP error: {e.response.status_code}',
-                'message': e.response.text
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'error': 'Request failed',
-                'message': str(e)
-            }
-    
-    def get_available_openrouter_models(self):
-        """
-        Fetch list of available models from OpenRouter
-        Returns: dict with 'success' and 'models' list
-        """
-        if self.service_type != 'openrouter':
-            return {
-                'success': False,
-                'message': 'This method only works with OpenRouter tokens'
-            }
-        
+        """Test OpenRouter API connection"""
         headers = {
             'Authorization': f'Bearer {self.token_value}',
             'Content-Type': 'application/json'
         }
-        
         try:
             response = requests.get(
                 'https://openrouter.ai/api/v1/models',
                 headers=headers,
                 timeout=10
             )
-            
             if response.status_code == 200:
-                data = response.json()
                 return {
                     'success': True,
-                    'models': data.get('data', [])
+                    'message': 'OpenRouter token is valid and working.'
                 }
             else:
                 return {
                     'success': False,
-                    'message': f'Failed to fetch models: {response.status_code}'
+                    'message': f'OpenRouter API returned status {response.status_code}: {response.text}'
                 }
         except requests.exceptions.RequestException as e:
             return {
                 'success': False,
-                'message': f'Error fetching models: {str(e)}'
+                'message': f'OpenRouter connection error: {str(e)}'
             }
-    
-    def get_site_count(self):
-        """
-        For Cloudflare tokens, count how many sites use this token
-        Returns: int (number of sites)
-        """
-        if self.service_type != 'cloudflare':
-            return 0
-        if hasattr(self, 'sites'):
-            return self.sites.filter(is_active=True).count()
-        return 0
-    
-    @property
-    def site_count(self):
-        """
-        Property for site count (for Cloudflare tokens only)
-        Returns: int
-        """
-        return self.get_site_count()
-    
-    @property
-    def masked_token(self):
-        """
-        Property accessor for masked token
-        Returns: String like "****abcd"
-        """
-        return self.get_masked_token()

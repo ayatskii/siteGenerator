@@ -78,44 +78,52 @@ class FootprintManager:
     FOOTPRINTS = {
         'WORDPRESS': 'wp-content/themes/{theme}/assets/',
         'JOOMLA': 'templates/{template}/',
+        'DRUPAL': 'sites/default/files/{theme}/',
+        'MAGENTO': 'pub/static/frontend/{theme}/default/en_US/',
+        'GHOST': 'assets/',  # Ghost usually keeps assets clean, but we can simulate a theme
         'CUSTOM': 'assets/'
     }
 
-    def __init__(self, footprint_type: str = 'CUSTOM', theme_name: str = 'default'):
+    COMMON_THEMES = [
+        'astra', 'oceanwp', 'divi', 'generatepress', 'hello-elementor',
+        'neve', 'kadence', 'blocksy', 'popularfx', 'go'
+    ]
+
+    def __init__(self, footprint_type: str = 'CUSTOM', theme_name: str = None, seed: str = None):
         self.footprint_type = footprint_type.upper()
-        self.theme_name = theme_name
+        
+        # Pick a deterministic random theme if not provided
+        if not theme_name or theme_name == 'default':
+            rng = random.Random(seed) if seed else random.Random()
+            self.theme_name = rng.choice(self.COMMON_THEMES)
+        else:
+            self.theme_name = theme_name
+            
         self.base_path = self._get_base_path()
 
     def _get_base_path(self) -> str:
         pattern = self.FOOTPRINTS.get(self.footprint_type, self.FOOTPRINTS['CUSTOM'])
+        # Some footprints might not use {theme} or {template}, so we use safe formatting
         return pattern.format(theme=self.theme_name, template=self.theme_name)
 
     def remap_paths(self, content: str) -> str:
         """
         Remaps generic /assets/ paths to the CMS-specific path.
+        Handles: assets/, /assets/, ./assets/
         """
-        # Assuming the template uses a standard placeholder like /assets/ or just assets/
-        # We'll replace 'assets/' with the new base path
-        
-        # This regex looks for src="assets/..." or href="assets/..."
-        # It captures the quote to ensure we only replace inside attributes
-        
-        def replace_path(match):
-            quote = match.group(1) # " or '
-            rest = match.group(2)  # filename.ext
-            return f'src={quote}{self.base_path}{rest}{quote}' if 'src' in match.group(0) else f'href={quote}{self.base_path}{rest}{quote}'
-
-        # Improved pattern to handle both single and double quotes
-        # Matches src="assets/..." or src='assets/...'
-        pattern = r'(?:src|href)=([\'"])assets/([^\'"]+)\1'
+        # Regex to match src="assets/..." or src="/assets/..." or src="./assets/..."
+        # Group 1: Quote (' or ")
+        # Group 2: Optional prefix (/ or ./)
+        # Group 3: Path suffix (filename)
+        pattern = r'(?:src|href)=([\'"])(?:/|\./)?assets/([^\'"]+)\1'
         
         def replace_match(match):
-            # Reconstruct the attribute with the new path
-            # match.group(0) is the full string e.g. src="assets/file.jpg"
             full_match = match.group(0)
             attr_name = "src" if "src=" in full_match else "href"
             quote = match.group(1)
-            path_suffix = match.group(2)
+            # prefix = match.group(2) # We ignore the original prefix and use the new base path
+            path_suffix = match.group(3)
+            
             return f'{attr_name}={quote}{self.base_path}{path_suffix}{quote}'
 
         content = re.sub(pattern, replace_match, content)

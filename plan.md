@@ -892,7 +892,7 @@ A comprehensive web-based admin panel that enables users to create, manage, gene
 
 **Media Library**
 - Browse all media files
-- Folder structure
+- Folder structureT
 - Upload new images
 - Organize and manage files
 - Preview images

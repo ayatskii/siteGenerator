@@ -1,258 +1,550 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Card, Button, Input, Badge, Modal } from '../components/ui';
+import { HiPlus, HiTrash, HiArrowUp, HiArrowDown, HiSave, HiEye, HiSparkles, HiDuplicate } from 'react-icons/hi';
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import api from '../services/api';
 import { toast } from 'react-toastify';
+import GenerationModal from "../components/GenerationModal";
 
 const PageEditor = () => {
-    const { siteId, pageId } = useParams();
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        title: '',
-        slug: '',
-        published: false,
-        meta_title: '',
-        meta_description: '',
-        h1_heading: '',
-        use_h1_in_hero: false,
-        canonical_url: '',
-        custom_head_html: '',
-        primary_keywords: '',
-        lsi_keywords: ''
-    });
+  const { siteId, pageId } = useParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [generationModalOpen, setGenerationModalOpen] = useState(false);
+  
+  const [pageData, setPageData] = useState({
+    title: '',
+    slug: '',
+    published: false,
+    meta_title: '',
+    meta_description: '',
+    h1_heading: '',
+  });
+  
+  const [blocks, setBlocks] = useState([]);
+  const [blockModal, setBlockModal] = useState(false);
 
-    useEffect(() => {
-        if (pageId !== 'new') {
-            fetchPageData();
-        } else {
-            setLoading(false);
+  useEffect(() => {
+    if (!siteId || siteId === 'undefined') {
+      navigate('/sites-list');
+      return;
+    }
+
+    if (pageId !== 'new') {
+      fetchPageData();
+      fetchBlocks();
+    } else {
+      setLoading(false);
+    }
+  }, [pageId, siteId]);
+
+  const fetchPageData = async () => {
+    try {
+      const res = await api.get(`/api/pages/${pageId}/`);
+      setPageData(res.data);
+    } catch (error) {
+      toast.error("Failed to load page data");
+    }
+  };
+
+  const fetchBlocks = async () => {
+    try {
+      const res = await api.get(`/api/blocks/?page_id=${pageId}`);
+      setBlocks(res.data.sort((a, b) => a.order - b.order));
+    } catch (error) {
+      console.error("Failed to load blocks", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setPageData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleSavePage = async () => {
+    setSaving(true);
+    try {
+      if (pageId === 'new') {
+        const res = await api.post(`/api/pages/`, { ...pageData, site: siteId });
+        toast.success("Page created successfully!");
+        navigate(`/sites/${siteId}/pages/${res.data.id}`);
+      } else {
+        await api.put(`/api/pages/${pageId}/`, pageData);
+        
+        // Save all blocks
+        for (const block of blocks) {
+          if (block.id) {
+            await api.put(`/api/blocks/${block.id}/`, block);
+          } else {
+            await api.post(`/api/blocks/`, { ...block, page: pageId });
+          }
         }
-    }, [pageId]);
+        
+        toast.success("Page saved successfully!");
+      }
+    } catch (error) {
+      toast.error("Failed to save page");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    const fetchPageData = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await axios.get(`http://127.0.0.1:8000/api/sites/pages/${pageId}/`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setFormData(res.data);
-            setLoading(false);
-        } catch (err) {
-            toast.error("Failed to load page data.");
-            setLoading(false);
-        }
+  const addBlock = (type) => {
+    const newBlock = {
+      block_type: type,
+      order: blocks.length,
+      content: getDefaultContent(type),
     };
+    setBlocks([...blocks, newBlock]);
+    setBlockModal(false);
+  };
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+  const getDefaultContent = (type) => {
+    const defaults = {
+      hero: { title: 'Hero Title', subtitle: 'Hero subtitle', cta_text: 'Get Started', cta_link: '#' },
+      article: { heading: 'Article Heading', body: 'Article content goes here...' },
+      image: { image_url: '', alt_text: '', caption: '' },
+      text_image: { heading: '', text: '', image_url: '', image_position: 'right' },
+      cta: { heading: 'Call to Action', text: 'Description', button_text: 'Click Here', button_link: '#' },
+      faq: { questions: [{ question: 'Question?', answer: 'Answer' }] },
     };
+    return defaults[type] || {};
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('token');
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            
-            if (pageId === 'new') {
-                await axios.post(`http://127.0.0.1:8000/api/sites/pages/`, { ...formData, site: siteId }, config);
-                toast.success("Page created successfully!");
-            } else {
-                await axios.put(`http://127.0.0.1:8000/api/sites/pages/${pageId}/`, formData, config);
-                toast.success("Page updated successfully!");
-            }
-            navigate(`/sites/${siteId}`);
-        } catch (err) {
-            toast.error("Failed to save page.");
-        }
-    };
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(blocks);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Update order property
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      order: index
+    }));
+    
+    setBlocks(updatedItems);
+  };
 
-    const handleGenerateContent = () => {
-        // Stub for generation modal
-        alert("Content Generation Modal would appear here with options based on keywords.");
-    };
+  const deleteBlock = (index) => {
+    if (!confirm('Delete this block?')) return;
+    setBlocks(blocks.filter((_, i) => i !== index));
+  };
 
-    if (loading) return <div className="p-8">Loading...</div>;
+  const updateBlockContent = (index, field, value) => {
+    const newBlocks = [...blocks];
+    newBlocks[index].content = { ...newBlocks[index].content, [field]: value };
+    setBlocks(newBlocks);
+  };
 
-    return (
-        <div className="max-w-4xl mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">{pageId === 'new' ? 'Create Page' : 'Edit Page'}</h1>
-                <div className="space-x-2">
-                    <button 
-                        type="button"
-                        onClick={() => navigate(`/sites/${siteId}`)}
-                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={handleSubmit}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                        Save Changes
-                    </button>
-                </div>
+  const handlePreview = async () => {
+    try {
+      await handleSavePage();
+      const response = await api.get(`/api/pages/${pageId}/preview/`);
+      const previewWindow = window.open('', '_blank');
+      previewWindow.document.write(response.data);
+      previewWindow.document.close();
+    } catch (error) {
+      console.error("Preview failed", error);
+      toast.error("Failed to generate preview");
+    }
+  };
+
+  const blockTypes = [
+    { type: 'hero', label: 'Hero Section', icon: '🎯' },
+    { type: 'article', label: 'Article/Text', icon: '📝' },
+    { type: 'image', label: 'Image', icon: '🖼️' },
+    { type: 'text_image', label: 'Text + Image', icon: '📄' },
+    { type: 'cta', label: 'Call to Action', icon: '🎯' },
+    { type: 'faq', label: 'FAQ', icon: '❓' },
+    { type: 'custom', label: 'Custom HTML', icon: 'code' },
+    { type: 'swiper', label: 'Swiper Slider', icon: 'view_carousel' },
+  ];
+
+  const renderBlockEditor = (block, index) => {
+    const { block_type, content } = block;
+
+    switch (block_type) {
+      case 'hero':
+        return (
+          <div className="space-y-3">
+            <Input
+              label="Title"
+              value={content.title || ''}
+              onChange={(e) => updateBlockContent(index, 'title', e.target.value)}
+            />
+            <Input
+              label="Subtitle"
+              value={content.subtitle || ''}
+              onChange={(e) => updateBlockContent(index, 'subtitle', e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="CTA Text"
+                value={content.cta_text || ''}
+                onChange={(e) => updateBlockContent(index, 'cta_text', e.target.value)}
+              />
+              <Input
+                label="CTA Link"
+                value={content.cta_link || ''}
+                onChange={(e) => updateBlockContent(index, 'cta_link', e.target.value)}
+              />
             </div>
+          </div>
+        );
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-                {/* General Info */}
-                <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">General Information</h2>
-                    <div className="grid grid-cols-1 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Page Title</label>
-                            <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Slug</label>
-                            <input
-                                type="text"
-                                name="slug"
-                                value={formData.slug}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name="published"
-                                checked={formData.published}
-                                onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label className="ml-2 block text-sm text-gray-900">Published</label>
-                        </div>
-                    </div>
-                </div>
+      case 'article':
+        return (
+          <div className="space-y-3">
+            <Input
+              label="Heading"
+              value={content.heading || ''}
+              onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+              <textarea
+                value={content.body || ''}
+                onChange={(e) => updateBlockContent(index, 'body', e.target.value)}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        );
 
-                <hr className="border-gray-200" />
+      case 'image':
+        return (
+          <div className="space-y-3">
+            <Input
+              label="Image URL"
+              value={content.image_url || ''}
+              onChange={(e) => updateBlockContent(index, 'image_url', e.target.value)}
+            />
+            <Input
+              label="Alt Text"
+              value={content.alt_text || ''}
+              onChange={(e) => updateBlockContent(index, 'alt_text', e.target.value)}
+            />
+            <Input
+              label="Caption"
+              value={content.caption || ''}
+              onChange={(e) => updateBlockContent(index, 'caption', e.target.value)}
+            />
+          </div>
+        );
 
-                {/* SEO Settings */}
-                <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">SEO Settings</h2>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Meta Title</label>
-                            <input
-                                type="text"
-                                name="meta_title"
-                                value={formData.meta_title}
-                                onChange={handleChange}
-                                maxLength={60}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">Recommended max 60 characters.</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Meta Description</label>
-                            <textarea
-                                name="meta_description"
-                                value={formData.meta_description}
-                                onChange={handleChange}
-                                maxLength={160}
-                                rows={3}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">Recommended max 160 characters.</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">H1 Heading</label>
-                            <input
-                                type="text"
-                                name="h1_heading"
-                                value={formData.h1_heading}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                name="use_h1_in_hero"
-                                checked={formData.use_h1_in_hero}
-                                onChange={handleChange}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                            />
-                            <label className="ml-2 block text-sm text-gray-900">Use H1 in Hero Block</label>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Canonical URL</label>
-                            <input
-                                type="url"
-                                name="canonical_url"
-                                value={formData.canonical_url}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Custom Head HTML</label>
-                            <textarea
-                                name="custom_head_html"
-                                value={formData.custom_head_html}
-                                onChange={handleChange}
-                                rows={4}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
-                            />
-                        </div>
-                    </div>
-                </div>
+      case 'text_image':
+        return (
+          <div className="space-y-3">
+            <Input
+              label="Heading"
+              value={content.heading || ''}
+              onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Text</label>
+              <textarea
+                value={content.text || ''}
+                onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <Input
+              label="Image URL"
+              value={content.image_url || ''}
+              onChange={(e) => updateBlockContent(index, 'image_url', e.target.value)}
+            />
+            <div>
+               <label className="block text-sm font-medium text-gray-700 mb-1">Image Position</label>
+               <select
+                 value={content.image_position || 'right'}
+                 onChange={(e) => updateBlockContent(index, 'image_position', e.target.value)}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+               >
+                 <option value="left">Left</option>
+                 <option value="right">Right</option>
+               </select>
+            </div>
+          </div>
+        );
 
-                <hr className="border-gray-200" />
+      case 'cta':
+        return (
+          <div className="space-y-3">
+            <Input
+              label="Heading"
+              value={content.heading || ''}
+              onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
+            />
+            <Input
+              label="Text"
+              value={content.text || ''}
+              onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Button Text"
+                value={content.button_text || ''}
+                onChange={(e) => updateBlockContent(index, 'button_text', e.target.value)}
+              />
+              <Input
+                label="Button Link"
+                value={content.button_link || ''}
+                onChange={(e) => updateBlockContent(index, 'button_link', e.target.value)}
+              />
+            </div>
+          </div>
+        );
 
-                {/* Content Generation */}
-                <div>
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-medium text-gray-900">Content Generation Metadata</h2>
-                        <button
-                            type="button"
-                            onClick={handleGenerateContent}
-                            className="text-sm bg-purple-100 text-purple-700 px-3 py-1 rounded-md hover:bg-purple-200"
-                        >
-                            ✨ Generate Content
-                        </button>
-                    </div>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Primary Keywords</label>
-                            <textarea
-                                name="primary_keywords"
-                                value={formData.primary_keywords}
-                                onChange={handleChange}
-                                rows={3}
-                                placeholder="One keyword per line"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">LSI Keywords</label>
-                            <textarea
-                                name="lsi_keywords"
-                                value={formData.lsi_keywords}
-                                onChange={handleChange}
-                                rows={3}
-                                placeholder="One keyword per line"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </form>
+      case 'faq':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Questions (JSON)</label>
+              <textarea
+                value={JSON.stringify(content.questions || [], null, 2)}
+                onChange={(e) => {
+                  try {
+                    const questions = JSON.parse(e.target.value);
+                    updateBlockContent(index, 'questions', questions);
+                  } catch (err) {
+                  }
+                }}
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+              <p className="text-xs text-gray-500 mt-1">Format: [{`{"question": "...", "answer": "..."}`}]</p>
+            </div>
+          </div>
+        );
+
+      case 'custom':
+        return (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Custom HTML</label>
+              <textarea
+                value={content.html || ''}
+                onChange={(e) => updateBlockContent(index, 'html', e.target.value)}
+                rows={8}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                placeholder="<div>Your custom HTML here</div>"
+              />
+            </div>
+          </div>
+        );
+
+      case 'swiper':
+        return (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">Swiper Preset ID (Implementation Pending)</p>
+             <Input
+              label="Preset ID"
+              value={content.preset_id || ''}
+              onChange={(e) => updateBlockContent(index, 'preset_id', e.target.value)}
+            />
+          </div>
+        );
+
+      default:
+        return <p className="text-sm text-gray-500">Block type: {block_type}</p>;
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-12">Loading...</div>;
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {pageId === 'new' ? 'Create Page' : 'Edit Page'}
+          </h1>
+          <p className="text-sm text-gray-600">Configure page settings and content blocks</p>
         </div>
-    );
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={() => navigate(`/sites/${siteId}`)}>
+            Cancel
+          </Button>
+          <Button variant="secondary" icon={<HiEye className="w-5 h-5" />} onClick={handlePreview} disabled={saving || pageId === 'new'}>
+            Preview
+          </Button>
+          <Button variant="primary" icon={<HiSparkles className="w-5 h-5" />} onClick={() => setGenerationModalOpen(true)} disabled={saving || pageId === 'new'}>
+            Generate
+          </Button>
+          <Button variant="success" icon={<HiSave className="w-5 h-5" />} onClick={handleSavePage} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Page'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Blocks Editor (Left Column) */}
+        <div className="lg:col-span-2 space-y-6">
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="blocks">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="space-y-4"
+                >
+                  {blocks.map((block, index) => (
+                    <Draggable key={index} draggableId={`block-${index}`} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="bg-white shadow rounded-lg border border-gray-200"
+                        >
+                          <div
+                            {...provided.dragHandleProps}
+                            className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between rounded-t-lg"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="text-gray-400 cursor-move">☰</span>
+                              <span className="font-medium text-gray-700 capitalize">
+                                {block.block_type.replace('_', ' ')} Block
+                              </span>
+                              <Badge variant="gray">#{index + 1}</Badge>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => deleteBlock(index)}
+                                className="text-red-600 hover:text-red-800 p-1"
+                              >
+                                <HiTrash className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            {renderBlockEditor(block, index)}
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+
+          <button
+            onClick={() => setBlockModal(true)}
+            className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors flex items-center justify-center space-x-2"
+          >
+            <HiPlus className="w-5 h-5" />
+            <span>Add Content Block</span>
+          </button>
+        </div>
+
+        {/* Page Settings (Right Column) */}
+        <div className="lg:col-span-1">
+          <Card title="Page Settings">
+            <div className="space-y-4">
+              <Input
+                label="Title"
+                name="title"
+                value={pageData.title}
+                onChange={handlePageChange}
+                required
+              />
+              <Input
+                label="Slug"
+                name="slug"
+                value={pageData.slug}
+                onChange={handlePageChange}
+                placeholder="page-url"
+              />
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="published"
+                  name="published"
+                  checked={pageData.published}
+                  onChange={handlePageChange}
+                  className="h-4 w-4 text-blue-600 rounded border-gray-300"
+                />
+                <label htmlFor="published" className="text-sm font-medium text-gray-700">
+                  Published
+                </label>
+              </div>
+              
+              <hr className="border-gray-200" />
+              <h3 className="font-medium text-gray-900">SEO Settings</h3>
+              
+              <Input
+                label="Meta Title"
+                name="meta_title"
+                value={pageData.meta_title || ''}
+                onChange={handlePageChange}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+                <textarea
+                  name="meta_description"
+                  value={pageData.meta_description || ''}
+                  onChange={handlePageChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <Input
+                label="H1 Heading"
+                name="h1_heading"
+                value={pageData.h1_heading || ''}
+                onChange={handlePageChange}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <GenerationModal
+        isOpen={generationModalOpen}
+        onClose={() => setGenerationModalOpen(false)}
+        pageId={pageId}
+        blocks={blocks}
+        onGenerateComplete={() => {
+            fetchBlocks();
+        }}
+      />
+
+      <Modal
+        isOpen={blockModal}
+        onClose={() => setBlockModal(false)}
+        title="Add Content Block"
+        size="md"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          {blockTypes.map(({ type, label, icon }) => (
+            <button
+              key={type}
+              onClick={() => addBlock(type)}
+              className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+            >
+              <div className="text-2xl mb-2">{icon}</div>
+              <div className="font-medium text-gray-900">{label}</div>
+            </button>
+          ))}
+        </div>
+      </Modal>
+    </div>
+  );
 };
 
 export default PageEditor;

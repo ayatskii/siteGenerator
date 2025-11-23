@@ -17,7 +17,11 @@ class TemplateViewSet(viewsets.ModelViewSet):
             return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            service = TemplateUploadService(request.data['file'])
+            service = TemplateUploadService(
+                request.data['file'],
+                name=request.data.get('name'),
+                description=request.data.get('description')
+            )
             service.process()
             return Response({'status': 'Template uploaded successfully'}, status=status.HTTP_201_CREATED)
         except ValidationError as e:

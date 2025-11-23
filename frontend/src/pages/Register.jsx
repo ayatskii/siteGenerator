@@ -1,174 +1,188 @@
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
+import { Button, Input, Card } from "../components/ui";
 
-const URL = import.meta.env.VITE_BACKEND_URL + "/api/register";
 const Register = (props) => {
+  const navigate = useNavigate();
   const { isLoggedIn, setIsLoggedIn, setName, setEmail } = props;
-  let navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    terms: false,
+  });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (isLoggedIn) navigate("profile");
-  });
+    if (isLoggedIn) navigate("/");
+  }, [isLoggedIn, navigate]);
 
-  const handleRegister = async (ev) => {
-    ev.preventDefault();
-    const name = ev.target.name.value;
-    const email = ev.target.email.value;
-    const password = ev.target.password.value;
-    const confirmpassword = ev.target.confirmpassword.value;
-    if (password !== confirmpassword) toast.error("Passwords do not match !");
-    else{
-      const formData = {
-        name: name,
-        email: email,
-        password: password,
-      };
-      try {
-        const res = await axios.post(URL, formData);
-        const data = res.data;
-        if (data.success === true) {
-          toast.success(data.message);
-          setIsLoggedIn(true);
-          setName(name);
-          setEmail(email);
-          navigate("/profile");
-        } else {
-          toast.error(data.message);
-        }
-      } catch (err) {
-        console.log("Some error occured", err);
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setErrors({ confirmPassword: "Passwords do not match" });
+      toast.error("Passwords do not match!");
+      return;
+    }
+
+    // Validate terms accepted
+    if (!formData.terms) {
+      toast.error("Please accept the Terms and Conditions");
+      return;
+    }
+
+    setLoading(true);
+    setErrors({});
+
+    try {
+      const res = await api.post("/api/register/", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      
+      const data = res.data;
+      
+      if (data.success) {
+        toast.success(data.message || "Registration successful!");
+        setIsLoggedIn(true);
+        setName(formData.name);
+        setEmail(formData.email);
+        navigate("/");
+      } else {
+        toast.error(data.message || "Registration failed");
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      const msg = error.response?.data?.message || "Registration failed";
+      toast.error(msg);
+      
+      // Set field-specific errors if available
+      if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-center px-6 py-8 mx-auto my-5 lg:py-0">
-      <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-xl xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-        <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
-            Create an account
-          </h1>
-          <form
-            className="space-y-4 md:space-y-"
-            action="POST"
-            onSubmit={handleRegister}
-          >
-            <div>
-              <div className="mb-2 block">
-                <label htmlFor="name" className="text-sm font-medium required">
-                  Name
-                </label>
-              </div>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Your Name"
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Site Generator</h1>
+          <h2 className="mt-2 text-xl text-gray-600">Create your account</h2>
+        </div>
+
+        <Card>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <Input
+              label="Full Name"
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="John Doe"
+              error={errors.name}
+              required
+            />
+
+            <Input
+              label="Email Address"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              error={errors.email}
+              required
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.password}
                 required
               />
-            </div>
 
-            <div>
-              <div className="mb-2 block">
-                <label htmlFor="email" className="text-sm font-medium required">
-                  Email
-                </label>
-              </div>
-              <input
-                type="email"
-                name="email"
-                id="email"
-                className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                placeholder="Your Email"
+              <Input
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.confirmPassword}
                 required
               />
-            </div>
-
-            <div className="grid gap-6 mb-6 md:grid-cols-2">
-              <div>
-                <div className="mb-2 block">
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium required"
-                  >
-                    Password
-                  </label>
-                </div>
-                <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="Your Password"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required
-                />
-              </div>
-              <div>
-                <div className="mb-2 block">
-                  <label
-                    htmlFor="confirmpassword"
-                    className="text-sm font-medium required"
-                  >
-                    Confirm Password
-                  </label>
-                </div>
-                <input
-                  type="password"
-                  name="confirmpassword"
-                  id="confirmpassword"
-                  placeholder="Re-enter Password"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required
-                />
-              </div>
             </div>
 
             <div className="flex items-start">
               <div className="flex items-center h-5">
                 <input
                   id="terms"
+                  name="terms"
                   type="checkbox"
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  checked={formData.terms}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   required
-                  aria-describedby="terms"
                 />
               </div>
-              <div className="ml-3 text-sm">
-                <label
-                  htmlFor="terms"
-                  className="font-light text-gray-500 dark:text-gray-300"
-                >
-                  I accept the{" "}
-                  <a
-                    className="font-medium text-blue-600 hover:underline dark:text-blue-500"
-                    href="#"
-                  >
-                    Terms and Conditions
-                  </a>
-                </label>
-              </div>
+              <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
+                I accept the{" "}
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                  Terms and Conditions
+                </a>
+              </label>
             </div>
 
-            <button
+            <Button
               type="submit"
-              className="w-full focus:outline-none text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={loading}
             >
-              Create an account
-            </button>
-            <p className="text-center text-sm text-gray-500">
-              Already have an account?{" "}
-              <a
-                href="login"
-                className="font-semibold leading-6 text-blue-600 hover:text-blue-500"
-              >
-                Login Here
-              </a>
-            </p>
+              {loading ? "Creating account..." : "Create Account"}
+            </Button>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

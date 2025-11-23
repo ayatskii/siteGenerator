@@ -69,3 +69,8 @@ class SwiperBlockContentSerializer(serializers.Serializer):
     )
     auto_scroll = serializers.BooleanField(default=False)
     interval = serializers.IntegerField(default=3000)
+    
+class CustomBlockContentSerializer(serializers.Serializer):
+    html = serializers.CharField(required=False, allow_blank=True)
+    css = serializers.CharField(required=False, allow_blank=True)
+    js = serializers.CharField(required=False, allow_blank=True)

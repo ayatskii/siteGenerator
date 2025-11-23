@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -43,9 +44,50 @@ class Site(models.Model):
     header_cta_config = models.JSONField(default=dict, blank=True)
     footer_images = models.JSONField(default=list, blank=True)
     custom_head_html = models.TextField(blank=True, help_text="Custom HTML for <head> section")
+    custom_body_html = models.TextField(blank=True, help_text="Custom HTML for end of <body> section")
+    custom_css = models.TextField(blank=True, help_text="Custom CSS")
+    custom_js = models.TextField(blank=True, help_text="Custom JavaScript")
+    template_config = models.JSONField(default=dict, blank=True, help_text="Values for template variables")
     
     def __str__(self):
         return self.name
+    
+    @property
+    def page_count(self):
+        """Return total number of pages for this site."""
+        return self.pages.count()
+    
+    @property
+    def deployment_count(self):
+        """Return number of successful deployments."""
+        return self.deployments.filter(status='success').count()
+    
+    @property
+    def last_deployment(self):
+        """Return the most recent deployment."""
+        return self.deployments.order_by('-created_at').first()
+    
+    @property
+    def last_deployment_date(self):
+        """Return the date of the last deployment."""
+        last_dep = self.last_deployment
+        return last_dep.created_at if last_dep else None
+    
+    @property
+    def status(self):
+        """
+        Compute site status based on deployments and pages.
+        - 'deployed': Has successful deployment
+        - 'draft': Has pages but no deployment
+        - 'empty': No pages
+        """
+        if self.deployment_count > 0:
+            return 'deployed'
+        elif self.page_count > 0:
+            return 'draft'
+        else:
+            return 'empty'
+
 
 class Page(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='pages')
@@ -117,7 +159,8 @@ class Deployment(models.Model):
         return f"{self.site.name} - {self.created_at} ({self.status})"
 
 class SwiperPreset(models.Model):
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='swiper_presets')
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name='swiper_presets', null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='swiper_presets', null=True)
     name = models.CharField(max_length=255)
     items = models.JSONField(default=list, help_text="List of items with image, title, etc.")
     button_text = models.CharField(max_length=50, blank=True)
@@ -125,4 +168,4 @@ class SwiperPreset(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.site.name} - {self.name}"
+        return f"{self.name} ({self.site.name if self.site else 'Global'})"
