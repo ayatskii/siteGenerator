@@ -1,4 +1,5 @@
 import { Doughnut } from 'react-chartjs-2';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -10,12 +11,14 @@ import {
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const TrafficSourcesChart = ({ data }) => {
+  const { t } = useTranslation();
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Sources</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.trafficSources')}</h3>
         <div className="flex items-center justify-center h-64 text-gray-400">
-          <p>No traffic data available</p>
+          <p>{t('analytics.noTrafficData')}</p>
         </div>
       </div>
     );
@@ -64,7 +67,7 @@ const TrafficSourcesChart = ({ data }) => {
             const source = data[context.dataIndex];
             return [
               `${context.label}: ${context.parsed}%`,
-              `Visitors: ${source.visitors.toLocaleString()}`
+              `${t('analytics.visitors')}: ${source.visitors.toLocaleString()}`
             ];
           }
         }
@@ -74,7 +77,7 @@ const TrafficSourcesChart = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Traffic Sources</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.trafficSources')}</h3>
       <div className="h-64">
         <Doughnut data={chartData} options={options} />
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { 
   HiHome,
   HiPhotograph,
@@ -16,15 +17,16 @@ const SidebarLayout = (props) => {
   const { isLoggedIn, setIsLoggedIn, name, setName, email, setEmail } = props;
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { t } = useTranslation();
 
   const menuItems = [
-    { label: "Dashboard", path: "/", icon: HiHome },
-    { label: "Sites", path: "/sites-list", icon: HiGlobeAlt },
-    { label: "Media Library", path: "/media-library", icon: HiPhotograph },
-    { label: "Analytics", path: "/analytics", icon: HiChartBar },
-    { label: "Prompts", path: "/prompts", icon: HiCode },
-    { label: "Templates", path: "/templates", icon: HiTemplate },
-    { label: "Settings", path: "/settings", icon: HiCog },
+    { label: t('nav.dashboard'), path: "/", icon: HiHome },
+    { label: t('nav.sites'), path: "/sites-list", icon: HiGlobeAlt },
+    { label: t('nav.media'), path: "/media-library", icon: HiPhotograph },
+    { label: t('nav.analytics'), path: "/analytics", icon: HiChartBar },
+    { label: t('nav.prompts'), path: "/prompts", icon: HiCode },
+    { label: t('nav.templates'), path: "/templates", icon: HiTemplate },
+    { label: t('nav.settings'), path: "/settings", icon: HiCog },
   ];
 
   const isActive = (path) => {
@@ -96,7 +98,7 @@ const SidebarLayout = (props) => {
           onClick={handleLogout}
           className="w-full py-2 px-4 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          Sign Out
+          {t('nav.logout')}
         </button>
       </div>
     </div>

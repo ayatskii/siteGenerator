@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Card, Button, Input, Modal, Badge, Spinner } from "../components/ui";
 import { HiUpload, HiFolder, HiPhotograph, HiTrash, HiSearch, HiPlus, HiFolderAdd } from "react-icons/hi";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import { toast } from "react-toastify";
 
 const MediaLibrary = () => {
+  const { t } = useTranslation();
   const [media, setMedia] = useState([]);
   const [folders, setFolders] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null);
@@ -40,7 +42,7 @@ const MediaLibrary = () => {
       setMedia(response.data);
     } catch (error) {
       console.error("Error fetching media:", error);
-      toast.error("Failed to load media");
+      toast.error(t('media.loadError') || "Failed to load media");
     } finally {
       setLoading(false);
     }
@@ -58,7 +60,7 @@ const MediaLibrary = () => {
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0 && !urlUpload) {
-      toast.error("Please select files or enter a URL");
+      toast.error(t('media.selectFilesError'));
       return;
     }
 
@@ -70,7 +72,7 @@ const MediaLibrary = () => {
           url: urlUpload,
           folder: currentFolder,
         });
-        toast.success("Media uploaded from URL");
+        toast.success(t('media.uploadUrlSuccess'));
       } else {
         // File upload - upload each file separately
         for (const file of selectedFiles) {
@@ -85,7 +87,7 @@ const MediaLibrary = () => {
             headers: { "Content-Type": "multipart/form-data" },
           });
         }
-        toast.success(`${selectedFiles.length} file(s) uploaded successfully`);
+        toast.success(`${selectedFiles.length} ${t('media.uploadSuccess')}`);
       }
       
       setUploadModal(false);
@@ -96,7 +98,7 @@ const MediaLibrary = () => {
       await fetchMedia();
     } catch (error) {
       console.error("Error uploading media:", error);
-      toast.error("Failed to upload media: " + (error.response?.data?.error || error.message));
+      toast.error(t('media.uploadError') + ": " + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -104,7 +106,7 @@ const MediaLibrary = () => {
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      toast.error("Folder name is required");
+      toast.error(t('media.folderRequired'));
       return;
     }
 
@@ -114,25 +116,25 @@ const MediaLibrary = () => {
         parent: currentFolder || null,
         site: null, // Media library folders can be site-independent
       });
-      toast.success("Folder created successfully");
+      toast.success(t('media.folderSuccess'));
       setFolderModal(false);
       setNewFolderName("");
       fetchFolders();
     } catch (error) {
       console.error("Folder creation error:", error);
-      toast.error("Failed to create folder: " + (error.response?.data?.parent?.[0] || error.response?.data?.site?.[0] || "Unknown error"));
+      toast.error(t('media.folderError') + ": " + (error.response?.data?.parent?.[0] || error.response?.data?.site?.[0] || "Unknown error"));
     }
   };
 
   const handleDeleteMedia = async (id) => {
-    if (!confirm("Are you sure you want to delete this media file?")) return;
+    if (!confirm(t('media.deleteConfirm'))) return;
 
     try {
       await api.delete(`/api/media/assets/${id}/`);
-      toast.success("Media deleted successfully");
+      toast.success(t('media.deleteSuccess'));
       fetchMedia();
     } catch (error) {
-      toast.error("Failed to delete media");
+      toast.error(t('media.deleteError'));
     }
   };
 
@@ -145,9 +147,9 @@ const MediaLibrary = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Media Library</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('media.title')}</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Upload and manage your site images and media files
+            {t('media.subtitle')}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -157,14 +159,14 @@ const MediaLibrary = () => {
             icon={<HiFolderAdd className="w-5 h-5" />}
             onClick={() => setFolderModal(true)}
           >
-            New Folder
+            {t('media.newFolder')}
           </Button>
           <Button
             variant="primary"
             icon={<HiUpload className="w-5 h-5" />}
             onClick={() => setUploadModal(true)}
           >
-            Upload Files
+            {t('media.uploadFiles')}
           </Button>
         </div>
       </div>
@@ -177,12 +179,12 @@ const MediaLibrary = () => {
             className="hover:text-blue-600"
           >
             <HiFolder className="w-4 h-4 inline mr-1" />
-            All Files
+            {t('media.allFiles')}
           </button>
           {currentFolder && (
             <>
               <span>/</span>
-              <span className="text-gray-900">Current Folder</span>
+              <span className="text-gray-900">{t('media.currentFolder')}</span>
             </>
           )}
         </div>
@@ -191,7 +193,7 @@ const MediaLibrary = () => {
             <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search media..."
+              placeholder={t('media.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -203,7 +205,7 @@ const MediaLibrary = () => {
       {/* Folders */}
       {folders.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Folders</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">{t('media.folders')}</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {folders.map((folder) => (
               <button
@@ -235,16 +237,16 @@ const MediaLibrary = () => {
           >
             <HiPhotograph className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? "No media found" : "No media files yet"}
+              {searchTerm ? t('media.noMediaFound') : t('media.noMediaYet')}
             </h3>
             <p className="text-gray-600 mb-4">
               {searchTerm
-                ? "Try a different search term"
-                : "Drag and drop files here or click upload"}
+                ? t('media.tryDifferentSearch')
+                : t('media.dragDrop')}
             </p>
             {!searchTerm && (
               <Button variant="primary" onClick={() => setUploadModal(true)}>
-                Upload Files
+                {t('media.uploadFiles')}
               </Button>
             )}
           </div>
@@ -303,15 +305,15 @@ const MediaLibrary = () => {
           setSelectedFiles([]);
           setUrlUpload("");
         }}
-        title="Upload Media"
+        title={t('media.uploadModalTitle')}
         size="md"
         footer={
           <>
             <Button variant="secondary" onClick={() => setUploadModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleUpload} disabled={loading}>
-              {loading ? "Uploading..." : "Upload"}
+              {loading ? t('media.uploading') : t('media.upload')}
             </Button>
           </>
         }
@@ -320,7 +322,7 @@ const MediaLibrary = () => {
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Upload Files
+              {t('media.uploadLabel')}
             </label>
             <input
               ref={fileInputRef}
@@ -338,11 +340,11 @@ const MediaLibrary = () => {
             >
               <HiUpload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-600">
-                Drop files here or click to browse
+                {t('media.dropFiles')}
               </p>
               {selectedFiles.length > 0 && (
                 <p className="text-sm text-blue-600 mt-2">
-                  {selectedFiles.length} file(s) selected
+                  {selectedFiles.length} {t('media.filesSelected')}
                 </p>
               )}
             </div>
@@ -353,13 +355,13 @@ const MediaLibrary = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">OR</span>
+              <span className="px-2 bg-white text-gray-500">{t('media.or')}</span>
             </div>
           </div>
 
           {/* URL Upload */}
           <Input
-            label="Upload from URL"
+            label={t('media.uploadUrl')}
             value={urlUpload}
             onChange={(e) => setUrlUpload(e.target.value)}
             placeholder="https://example.com/image.jpg"
@@ -374,21 +376,21 @@ const MediaLibrary = () => {
           setFolderModal(false);
           setNewFolderName("");
         }}
-        title="Create New Folder"
+        title={t('media.createFolderTitle')}
         size="sm"
         footer={
           <>
             <Button variant="secondary" onClick={() => setFolderModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleCreateFolder}>
-              Create
+              {t('media.create')}
             </Button>
           </>
         }
       >
         <Input
-          label="Folder Name"
+          label={t('media.folderName')}
           value={newFolderName}
           onChange={(e) => setNewFolderName(e.target.value)}
           placeholder="My Images"

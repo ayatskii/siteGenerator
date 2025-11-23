@@ -1,13 +1,88 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { HiPencil, HiTrash, HiDuplicate, HiEye, HiExternalLink, HiPlus, HiSave } from "react-icons/hi";
+import { useTranslation } from "react-i18next";
 import { Tabs } from "../components/ui";
 import api from "../services/api";
 import { toast } from "react-toastify";
+import AnalyticsDashboard from "../components/analytics/AnalyticsDashboard";
+
+const CustomCodeEditor = ({ site, setSite, siteId }) => {
+    const { t } = useTranslation();
+    const [activeTab, setActiveTab] = useState('css');
+
+    const tabs = [
+        { id: 'css', label: 'CSS', placeholder: t('siteDashboard.customCss'), field: 'custom_css' },
+        { id: 'js', label: 'JavaScript', placeholder: t('siteDashboard.customJs'), field: 'custom_js' },
+        { id: 'head', label: 'Head HTML', placeholder: t('siteDashboard.customHead'), field: 'custom_head_html' },
+        { id: 'body', label: 'Body HTML', placeholder: t('siteDashboard.customBody'), field: 'custom_body_html' },
+    ];
+
+    const activeField = tabs.find(t => t.id === activeTab);
+
+    const handleSave = async () => {
+        try {
+            await api.patch(`/api/sites/${siteId}/`, {
+                custom_css: site.custom_css,
+                custom_js: site.custom_js,
+                custom_head_html: site.custom_head_html,
+                custom_body_html: site.custom_body_html
+            });
+            toast.success(t('siteDashboard.codeSaved'));
+        } catch (err) {
+            toast.error(t('siteDashboard.codeError'));
+        }
+    };
+
+    return (
+        <div className="p-6">
+            <div className="flex space-x-4 mb-4 border-b border-gray-200">
+                {tabs.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`pb-2 px-1 text-sm font-medium ${
+                            activeTab === tab.id
+                                ? 'border-b-2 border-blue-500 text-blue-600'
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('siteDashboard.customCode')} - {activeField.label}
+                    </label>
+                    <textarea
+                        value={site?.[activeField.field] || ''}
+                        onChange={(e) => setSite({...site, [activeField.field]: e.target.value})}
+                        rows={15}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm bg-gray-50"
+                        placeholder={activeField.placeholder}
+                    />
+                </div>
+                <div className="flex justify-end">
+                    <button
+                        onClick={handleSave}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+                    >
+                        <HiSave className="w-5 h-5 mr-2" />
+                        {t('siteDashboard.saveChanges')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const SiteDashboard = () => {
     const { siteId } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [site, setSite] = useState(null);
     const [pages, setPages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -35,7 +110,7 @@ const SiteDashboard = () => {
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching data:", err);
-                setError("Failed to load site data.");
+                setError(t('siteDashboard.loadError'));
                 setLoading(false);
             }
         };
@@ -44,7 +119,7 @@ const SiteDashboard = () => {
     }, [siteId]);
 
     const handleDeletePage = async (pageId) => {
-        if (!window.confirm("Are you sure you want to delete this page?")) return;
+        if (!window.confirm(t('siteDashboard.deletePageConfirm'))) return;
 
         try {
             const token = localStorage.getItem('token');
@@ -52,25 +127,25 @@ const SiteDashboard = () => {
             setPages(pages.filter(p => p.id !== pageId));
         } catch (err) {
             console.error(err);
-            alert("Failed to delete page.");
+            alert(t('siteDashboard.deletePageError'));
         }
     };
 
     const [deploying, setDeploying] = useState(false);
 
     const handleDeploy = async () => {
-        if (!window.confirm("Are you sure you want to deploy this site?")) return;
+        if (!window.confirm(t('siteDashboard.deployConfirm'))) return;
         
         setDeploying(true);
         try {
             const res = await api.post('/api/deployments/deploy/', { site_id: siteId });
-            toast.success("Deployment started successfully!");
+            toast.success(t('siteDashboard.deploySuccess'));
             // Refresh site data to show new status
             const siteRes = await api.get(`/api/sites/${siteId}/`);
             setSite(siteRes.data);
         } catch (err) {
             console.error("Deployment failed:", err);
-            toast.error("Failed to start deployment");
+            toast.error(t('siteDashboard.deployError'));
         } finally {
             setDeploying(false);
         }
@@ -83,7 +158,7 @@ const SiteDashboard = () => {
             setPages([...pages, res.data]);
         } catch (err) {
             console.error(err);
-            alert("Failed to duplicate page.");
+            alert(t('siteDashboard.duplicateError'));
         }
     };
 
@@ -94,7 +169,7 @@ const SiteDashboard = () => {
         try {
             // 1. Trigger deployment/generation
             const res = await api.post('/api/deployments/deploy/', { site_id: siteId });
-            toast.success("Site generated successfully! Downloading...");
+            toast.success(t('siteDashboard.downloadSuccess'));
             
             if (res.data.download_url) {
                 // 2. Fetch the file as a blob with authentication
@@ -126,13 +201,13 @@ const SiteDashboard = () => {
             }
         } catch (err) {
             console.error("Download failed:", err);
-            toast.error("Failed to generate and download site");
+            toast.error(t('siteDashboard.downloadError'));
         } finally {
             setDownloading(false);
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
+    if (loading) return <div className="p-8 text-center">{t('siteDashboard.loading')}</div>;
     if (error) return <div className="p-8 text-red-500">{error}</div>;
 
     return (
@@ -151,12 +226,12 @@ const SiteDashboard = () => {
                         {downloading ? (
                             <>
                                 <span className="animate-spin mr-2">⏳</span>
-                                Generating...
+                                {t('siteDashboard.generating')}
                             </>
                         ) : (
                             <>
                                 <HiDuplicate className="w-5 h-5 mr-2" />
-                                Download Source
+                                {t('siteDashboard.downloadSource')}
                             </>
                         )}
                     </button>
@@ -168,12 +243,12 @@ const SiteDashboard = () => {
                         {deploying ? (
                             <>
                                 <span className="animate-spin mr-2">⏳</span>
-                                Deploying...
+                                {t('siteDashboard.deploying')}
                             </>
                         ) : (
                             <>
                                 <HiExternalLink className="w-5 h-5 mr-2" />
-                                Deploy Site
+                                {t('siteDashboard.deploySite')}
                             </>
                         )}
                     </button>
@@ -182,7 +257,7 @@ const SiteDashboard = () => {
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
                     >
                         <HiPlus className="w-5 h-5 mr-2" />
-                        Create New Page
+                        {t('siteDashboard.createNewPage')}
                     </button>
                 </div>
             </div>
@@ -190,11 +265,11 @@ const SiteDashboard = () => {
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 <Tabs tabs={[
                     {
-                        label: "Pages",
+                        label: t('siteDashboard.pages'),
                         content: (
                             <>
                                 <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900">Pages</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900">{t('siteDashboard.pages')}</h3>
                                 </div>
                                 <ul className="divide-y divide-gray-200">
                                     {pages.map((page) => (
@@ -204,7 +279,7 @@ const SiteDashboard = () => {
                                                     <div className="flex items-center">
                                                         <p className="text-sm font-medium text-blue-600 truncate">{page.title}</p>
                                                         <span className={`ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${page.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                            {page.published ? 'Published' : 'Draft'}
+                                                            {page.published ? t('siteDashboard.published') : t('siteDashboard.draft')}
                                                         </span>
                                                     </div>
                                                     <div className="mt-2 flex">
@@ -212,7 +287,7 @@ const SiteDashboard = () => {
                                                             <span className="truncate">/{page.slug}</span>
                                                         </div>
                                                         <div className="ml-6 flex items-center text-sm text-gray-500">
-                                                            <span>Updated: {new Date(page.updated_at).toLocaleDateString()}</span>
+                                                            <span>{t('siteDashboard.updated')}: {new Date(page.updated_at).toLocaleDateString()}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -221,19 +296,19 @@ const SiteDashboard = () => {
                                                         to={`/sites/${siteId}/pages/${page.id}`}
                                                         className="text-indigo-600 hover:text-indigo-900 px-3 py-1 border border-indigo-600 rounded-md text-sm"
                                                     >
-                                                        Edit
+                                                        {t('common.edit')}
                                                     </Link>
                                                     <button 
                                                         onClick={() => handleDuplicatePage(page.id)}
                                                         className="text-gray-600 hover:text-gray-900 px-3 py-1 border border-gray-300 rounded-md text-sm"
                                                     >
-                                                        Duplicate
+                                                        {t('siteDashboard.duplicate')}
                                                     </button>
                                                     <button 
                                                         onClick={() => handleDeletePage(page.id)}
                                                         className="text-red-600 hover:text-red-900 px-3 py-1 border border-red-300 rounded-md text-sm"
                                                     >
-                                                        Delete
+                                                        {t('siteDashboard.delete')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -244,19 +319,19 @@ const SiteDashboard = () => {
                         )
                     },
                     {
-                        label: "Custom Code",
+                        label: t('siteDashboard.customCode'),
                         content: (
                             <CustomCodeEditor site={site} setSite={setSite} siteId={siteId} />
                         )
                     },
                     {
-                        label: "Template Config",
+                        label: t('siteDashboard.templateConfig'),
                         content: (
                             <div className="p-6">
-                                <p className="text-gray-500 mb-4">Configure template-specific variables here.</p>
+                                <p className="text-gray-500 mb-4">{t('siteDashboard.configDesc')}</p>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Configuration (JSON)</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('siteDashboard.configLabel')}</label>
                                         <textarea
                                             value={JSON.stringify(site?.template_config || {}, null, 2)}
                                             onChange={(e) => {
@@ -278,14 +353,14 @@ const SiteDashboard = () => {
                                                     await api.patch(`/api/sites/${siteId}/`, {
                                                         template_config: site.template_config
                                                     });
-                                                    toast.success("Template config saved!");
+                                                    toast.success(t('siteDashboard.configSaved'));
                                                 } catch (err) {
-                                                    toast.error("Failed to save template config");
+                                                    toast.error(t('siteDashboard.configError'));
                                                 }
                                             }}
                                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
                                         >
-                                            Save Configuration
+                                            {t('siteDashboard.saveConfig')}
                                         </button>
                                     </div>
                                 </div>
@@ -293,7 +368,7 @@ const SiteDashboard = () => {
                         )
                     },
                     {
-                        label: "Analytics",
+                        label: t('siteDashboard.analytics'),
                         content: (
                             <div className="p-6">
                                 <AnalyticsDashboard siteId={siteId} />
@@ -301,80 +376,6 @@ const SiteDashboard = () => {
                         )
                     }
                 ]} />
-            </div>
-        </div>
-    );
-};
-
-// Sub-component for Analytics Tab logic
-import AnalyticsDashboard from "../components/analytics/AnalyticsDashboard";
-
-const CustomCodeEditor = ({ site, setSite, siteId }) => {
-    const [activeTab, setActiveTab] = useState('css');
-
-    const tabs = [
-        { id: 'css', label: 'CSS', placeholder: '/* Custom CSS here */', field: 'custom_css' },
-        { id: 'js', label: 'JavaScript', placeholder: '// Custom JS here', field: 'custom_js' },
-        { id: 'head', label: 'Head HTML', placeholder: '<meta ...>', field: 'custom_head_html' },
-        { id: 'body', label: 'Body HTML', placeholder: '<script ...>', field: 'custom_body_html' },
-    ];
-
-    const activeField = tabs.find(t => t.id === activeTab);
-
-    const handleSave = async () => {
-        try {
-            await api.patch(`/api/sites/${siteId}/`, {
-                custom_css: site.custom_css,
-                custom_js: site.custom_js,
-                custom_head_html: site.custom_head_html,
-                custom_body_html: site.custom_body_html
-            });
-            toast.success("Custom code saved!");
-        } catch (err) {
-            toast.error("Failed to save custom code");
-        }
-    };
-
-    return (
-        <div className="p-6">
-            <div className="flex space-x-4 mb-4 border-b border-gray-200">
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`pb-2 px-1 text-sm font-medium ${
-                            activeTab === tab.id
-                                ? 'border-b-2 border-blue-500 text-blue-600'
-                                : 'text-gray-500 hover:text-gray-700'
-                        }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
-
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Custom {activeField.label}
-                    </label>
-                    <textarea
-                        value={site?.[activeField.field] || ''}
-                        onChange={(e) => setSite({...site, [activeField.field]: e.target.value})}
-                        rows={15}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm bg-gray-50"
-                        placeholder={activeField.placeholder}
-                    />
-                </div>
-                <div className="flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-                    >
-                        <HiSave className="w-5 h-5 mr-2" />
-                        Save Changes
-                    </button>
-                </div>
             </div>
         </div>
     );

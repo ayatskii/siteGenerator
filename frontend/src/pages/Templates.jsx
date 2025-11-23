@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Card, Button, Badge, Table, Modal, Input, Spinner } from "../components/ui";
 import { HiUpload, HiTemplate, HiTrash, HiPencil, HiDownload, HiCheckCircle, HiPlus, HiEye } from "react-icons/hi";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import { toast } from "react-toastify";
 
 const Templates = () => {
+  const { t } = useTranslation();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploadModal, setUploadModal] = useState(false);
@@ -35,7 +37,7 @@ const Templates = () => {
       setTemplates(response.data);
     } catch (error) {
       console.error("Error fetching templates:", error);
-      toast.error("Failed to load templates");
+      toast.error(t('templates.loadError') || "Failed to load templates");
     } finally {
       setLoading(false);
     }
@@ -45,7 +47,7 @@ const Templates = () => {
     const file = e.target.files[0];
     if (file) {
       if (!file.name.endsWith('.zip')) {
-        toast.error("Please select a ZIP file");
+        toast.error(t('templates.selectZip'));
         return;
       }
       setUploadFile(file);
@@ -55,12 +57,12 @@ const Templates = () => {
 
   const handleUpload = async () => {
     if (!uploadFile) {
-      toast.error("Please select a file");
+      toast.error(t('templates.selectFile'));
       return;
     }
 
     if (!templateForm.name.trim()) {
-      toast.error("Please enter a template name");
+      toast.error(t('templates.enterName'));
       return;
     }
 
@@ -79,7 +81,7 @@ const Templates = () => {
         },
       });
 
-      toast.success("Template uploaded successfully");
+      toast.success(t('templates.uploadSuccess'));
       setUploadModal(false);
       setUploadFile(null);
       setUploadProgress(0);
@@ -87,29 +89,29 @@ const Templates = () => {
       fetchTemplates();
     } catch (error) {
       console.error("Error uploading template:", error);
-      toast.error("Failed to upload template");
+      toast.error(t('templates.uploadError'));
     }
   };
 
   const handleSetDefault = async (id) => {
     try {
       await api.patch(`/api/templates/${id}/set_default/`);
-      toast.success("Default template updated");
+      toast.success(t('templates.setDefaultSuccess'));
       fetchTemplates();
     } catch (error) {
-      toast.error("Failed to set default template");
+      toast.error(t('templates.setDefaultError'));
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this template?")) return;
+    if (!confirm(t('templates.deleteConfirm'))) return;
 
     try {
       await api.delete(`/api/templates/${id}/`);
-      toast.success("Template deleted successfully");
+      toast.success(t('templates.deleteSuccess'));
       fetchTemplates();
     } catch (error) {
-      toast.error("Failed to delete template");
+      toast.error(t('templates.deleteError'));
     }
   };
 
@@ -120,13 +122,13 @@ const Templates = () => {
         description: templateForm.description,
         content: templateForm.content,
       });
-      toast.success("Template updated successfully");
+      toast.success(t('templates.updateSuccess'));
       setEditModal(false);
       setCurrentTemplate(null);
       setTemplateForm({ name: "", description: "", is_default: false });
       fetchTemplates();
     } catch (error) {
-      toast.error("Failed to update template");
+      toast.error(t('templates.updateError'));
     }
   };
 
@@ -149,19 +151,19 @@ const Templates = () => {
         is_default: templateForm.is_default
       });
       
-      toast.success("Template created successfully");
+      toast.success(t('templates.createSuccess'));
       setCreateModal(false);
       setTemplateForm({ name: "", description: "", type: "MONOLITHIC", content: "", is_default: false });
       fetchTemplates();
     } catch (error) {
       console.error("Error creating template:", error);
-      toast.error("Failed to create template");
+      toast.error(t('templates.createError'));
     }
   };
 
   const columns = [
     {
-      header: "Template",
+      header: t('templates.template'),
       render: (template) => (
         <div className="flex items-center">
           <HiTemplate className="w-5 h-5 text-blue-500 mr-3" />
@@ -175,27 +177,27 @@ const Templates = () => {
       ),
     },
     {
-      header: "Type",
+      header: t('templates.type'),
       render: (template) => (
         <span className="text-sm text-gray-600">{template.template_type || "General"}</span>
       ),
     },
     {
-      header: "Status",
+      header: t('templates.status'),
       render: (template) => (
         <div className="flex items-center space-x-2">
           {template.is_default && (
             <Badge variant="success" size="sm">
               <HiCheckCircle className="w-3 h-3 mr-1 inline" />
-              Default
+              {t('templates.default')}
             </Badge>
           )}
-          <Badge variant="primary" size="sm">Active</Badge>
+          <Badge variant="primary" size="sm">{t('templates.active')}</Badge>
         </div>
       ),
     },
     {
-      header: "Uploaded",
+      header: t('templates.uploaded'),
       render: (template) => (
         <span className="text-sm text-gray-600">
           {new Date(template.created_at).toLocaleDateString()}
@@ -203,7 +205,7 @@ const Templates = () => {
       ),
     },
     {
-      header: "Actions",
+      header: t('templates.actions'),
       render: (template) => (
         <div className="flex items-center space-x-2">
           <Button
@@ -213,7 +215,7 @@ const Templates = () => {
               setCurrentTemplate(template);
               setDetailsModal(true);
             }}
-            title="View Details"
+            title={t('templates.viewDetails')}
           >
             <HiEye className="w-4 h-4 text-gray-600" />
           </Button>
@@ -223,7 +225,7 @@ const Templates = () => {
               size="sm"
               onClick={() => handleSetDefault(template.id)}
             >
-              Set Default
+              {t('templates.setDefault')}
             </Button>
           )}
           <Button
@@ -268,9 +270,9 @@ const Templates = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Templates</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('templates.title')}</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage site templates for consistent branding and layouts
+            {t('templates.subtitle')}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -279,14 +281,14 @@ const Templates = () => {
             icon={<HiPlus className="w-5 h-5" />}
             onClick={() => setCreateModal(true)}
           >
-            Create Template
+            {t('templates.createTemplate')}
           </Button>
           <Button
             variant="primary"
             icon={<HiUpload className="w-5 h-5" />}
             onClick={() => setUploadModal(true)}
           >
-            Upload Template
+            {t('templates.uploadTemplate')}
           </Button>
         </div>
       </div>
@@ -297,13 +299,13 @@ const Templates = () => {
           <div className="text-center py-12">
             <HiTemplate className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No templates yet
+              {t('templates.noTemplatesYet')}
             </h3>
             <p className="text-gray-600 mb-4">
-              Upload your first template ZIP file to get started
+              {t('templates.uploadFirst')}
             </p>
             <Button variant="primary" onClick={() => setUploadModal(true)}>
-              Upload Template
+              {t('templates.uploadTemplate')}
             </Button>
           </div>
         ) : (
@@ -318,36 +320,36 @@ const Templates = () => {
           setDetailsModal(false);
           setCurrentTemplate(null);
         }}
-        title="Template Details"
+        title={t('templates.detailsTitle')}
         size="lg"
         footer={
           <Button variant="primary" onClick={() => setDetailsModal(false)}>
-            Close
+            {t('common.close')}
           </Button>
         }
       >
         {currentTemplate && (
           <div className="space-y-6">
             <div>
-              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">General Info</h4>
+              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{t('templates.generalInfo')}</h4>
               <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                 <div>
-                  <span className="text-xs text-gray-500 block">Name</span>
+                  <span className="text-xs text-gray-500 block">{t('common.name')}</span>
                   <span className="font-medium">{currentTemplate.name}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-500 block">Type</span>
+                  <span className="text-xs text-gray-500 block">{t('templates.type')}</span>
                   <span className="font-medium">{currentTemplate.type}</span>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-xs text-gray-500 block">Description</span>
+                  <span className="text-xs text-gray-500 block">{t('templates.description')}</span>
                   <span className="text-sm">{currentTemplate.description || "No description"}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Available Variables</h4>
+              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{t('templates.availableVariables')}</h4>
               {currentTemplate.available_variables && currentTemplate.available_variables.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {currentTemplate.available_variables.map((v, i) => (
@@ -355,12 +357,12 @@ const Templates = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">No variables detected</p>
+                <p className="text-sm text-gray-500 italic">{t('templates.noVariables')}</p>
               )}
             </div>
 
             <div>
-              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Fingerprint Configuration</h4>
+              <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{t('templates.fingerprintConfig')}</h4>
               <div className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
                 <pre className="text-xs font-mono">
                   {JSON.stringify(currentTemplate.fingerprint_config || {}, null, 2)}
@@ -380,7 +382,7 @@ const Templates = () => {
           setUploadProgress(0);
           setTemplateForm({ name: "", description: "", is_default: false });
         }}
-        title="Upload Template"
+        title={t('templates.uploadModalTitle')}
         size="md"
         footer={
           <>
@@ -392,14 +394,14 @@ const Templates = () => {
                 setUploadProgress(0);
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="primary"
               onClick={handleUpload}
               disabled={!uploadFile || uploadProgress > 0}
             >
-              {uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Upload"}
+              {uploadProgress > 0 ? `${t('templates.uploading')} ${uploadProgress}%` : t('templates.uploadTemplate')}
             </Button>
           </>
         }
@@ -408,7 +410,7 @@ const Templates = () => {
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Template ZIP File
+              {t('templates.zipFile')}
             </label>
             <input
               ref={fileInputRef}
@@ -423,10 +425,10 @@ const Templates = () => {
             >
               <HiUpload className="w-12 h-12 mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-600">
-                {uploadFile ? uploadFile.name : "Click to select ZIP file"}
+                {uploadFile ? uploadFile.name : t('templates.clickToSelect')}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Template must include index.html and styles
+                {t('templates.mustInclude')}
               </p>
             </div>
           </div>
@@ -443,7 +445,7 @@ const Templates = () => {
           )}
 
           <Input
-            label="Template Name"
+            label={t('templates.templateName')}
             value={templateForm.name}
             onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
             placeholder="My Awesome Template"
@@ -451,11 +453,11 @@ const Templates = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.description')}</label>
             <textarea
               value={templateForm.description}
               onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
-              placeholder="Brief description of this template"
+              placeholder={t('templates.descriptionPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -470,7 +472,7 @@ const Templates = () => {
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="is_default" className="ml-2 text-sm text-gray-700">
-              Set as default template
+              {t('templates.setAsDefault')}
             </label>
           </div>
         </div>
@@ -484,33 +486,33 @@ const Templates = () => {
           setCurrentTemplate(null);
           setTemplateForm({ name: "", description: "", is_default: false });
         }}
-        title="Edit Template"
+        title={t('templates.editTitle')}
         size="md"
         footer={
           <>
             <Button variant="secondary" onClick={() => setEditModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleUpdateTemplate}>
-              Save Changes
+              {t('common.save')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Template Name"
+            label={t('templates.templateName')}
             value={templateForm.name}
             onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
             required
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.description')}</label>
             <textarea
               value={templateForm.description}
               onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
-              placeholder="Brief description of this template"
+              placeholder={t('templates.descriptionPlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -518,7 +520,7 @@ const Templates = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Content (HTML)
+              {t('templates.contentHtml')}
             </label>
             <textarea
               value={templateForm.content}
@@ -527,7 +529,7 @@ const Templates = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Edit the raw HTML content of the template.
+              {t('templates.editRawHtml')}
             </p>
           </div>
         </div>
@@ -539,22 +541,22 @@ const Templates = () => {
           setCreateModal(false);
           setTemplateForm({ name: "", description: "", type: "MONOLITHIC", content: "<html>\n  <body>\n    <h1>{{ page_title }}</h1>\n    <div>{{ content }}</div>\n  </body>\n</html>", is_default: false });
         }}
-        title="Create New Template"
+        title={t('templates.createTitle')}
         size="lg"
         footer={
           <>
             <Button variant="secondary" onClick={() => setCreateModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleCreate}>
-              Create Template
+              {t('templates.createTemplate')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Template Name"
+            label={t('templates.templateName')}
             value={templateForm.name}
             onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
             placeholder="My New Template"
@@ -562,23 +564,23 @@ const Templates = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.type')}</label>
             <select
               value={templateForm.type}
               onChange={(e) => setTemplateForm({ ...templateForm, type: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="MONOLITHIC">Monolithic (Single HTML File)</option>
-              <option value="SECTIONAL">Sectional (Base + Sections)</option>
+              <option value="MONOLITHIC">{t('templates.monolithic')}</option>
+              <option value="SECTIONAL">{t('templates.sectional')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.description')}</label>
             <textarea
               value={templateForm.description}
               onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
-              placeholder="Brief description of this template"
+              placeholder={t('templates.descriptionPlaceholder')}
               rows={2}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -586,7 +588,7 @@ const Templates = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Initial Content (HTML)
+              {t('templates.initialContent')}
             </label>
             <textarea
               value={templateForm.content}
@@ -595,7 +597,7 @@ const Templates = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
             />
             <p className="mt-1 text-xs text-gray-500">
-              You can use variables like {"{{ page_title }}"}, {"{{ content }}"}, etc.
+              {t('templates.useVariables')}
             </p>
           </div>
 
@@ -608,7 +610,7 @@ const Templates = () => {
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="create_is_default" className="ml-2 text-sm text-gray-700">
-              Set as default template
+              {t('templates.setAsDefault')}
             </label>
           </div>
         </div>

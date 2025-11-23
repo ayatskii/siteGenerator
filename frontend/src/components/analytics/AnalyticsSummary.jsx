@@ -1,6 +1,9 @@
 import { ArrowUpIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
+import { useTranslation } from 'react-i18next';
 
 const AnalyticsSummary = ({ data }) => {
+  const { t } = useTranslation();
+
   if (!data || !data.visitors_summary) {
     return null;
   }
@@ -9,28 +12,28 @@ const AnalyticsSummary = ({ data }) => {
   
   const cards = [
     {
-      title: 'Total Page Views',
+      title: t('analytics.totalPageViews'),
       value: visitors_summary.total_page_views?.toLocaleString() || '0',
       icon: '📊',
       color: 'blue',
       trend: visitors_summary.total_page_views > 1000 ? 'up' : null
     },
     {
-      title: 'Unique Visitors',
+      title: t('analytics.uniqueVisitors'),
       value: visitors_summary.unique_visitors?.toLocaleString() || '0',
       icon: '👥',
       color: 'green',
       trend: visitors_summary.unique_visitors > 500 ? 'up' : null
     },
     {
-      title: 'Bounce Rate',
+      title: t('analytics.bounceRate'),
       value: `${data.bounce_rate?.toFixed(1) || '0'}%`,
       icon: '📉',
       color: 'amber',
       trend: data.bounce_rate < 40 ? 'up' : 'down'
     },
     {
-      title: 'Avg Session Duration',
+      title: t('analytics.avgSessionDuration'),
       value: `${Math.floor((data.avg_session_duration || 0) / 60)}m ${(data.avg_session_duration || 0) % 60}s`,
       icon: '⏱️',
       color: 'purple',
@@ -68,7 +71,7 @@ const AnalyticsSummary = ({ data }) => {
                 <ArrowDownIcon className="w-4 h-4 mr-1" />
               )}
               <span className="font-medium">
-                {card.trend === 'up' ? 'Performing well' : 'Needs attention'}
+                {card.trend === 'up' ? t('analytics.performingWell') : t('analytics.needsAttention')}
               </span>
             </div>
           )}

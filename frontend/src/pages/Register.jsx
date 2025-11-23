@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../services/api";
 import { toast } from "react-toastify";
 import { Button, Input, Card } from "../components/ui";
 
 const Register = (props) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isLoggedIn, setIsLoggedIn, setName, setEmail } = props;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,14 +40,14 @@ const Register = (props) => {
     
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ confirmPassword: "Passwords do not match" });
-      toast.error("Passwords do not match!");
+      setErrors({ confirmPassword: t('auth.passwordsDoNotMatch') });
+      toast.error(t('auth.passwordsDoNotMatch'));
       return;
     }
 
     // Validate terms accepted
     if (!formData.terms) {
-      toast.error("Please accept the Terms and Conditions");
+      toast.error(t('auth.acceptTerms'));
       return;
     }
 
@@ -62,17 +64,17 @@ const Register = (props) => {
       const data = res.data;
       
       if (data.success) {
-        toast.success(data.message || "Registration successful!");
+        toast.success(data.message || t('auth.registrationSuccess'));
         setIsLoggedIn(true);
         setName(formData.name);
         setEmail(formData.email);
         navigate("/");
       } else {
-        toast.error(data.message || "Registration failed");
+        toast.error(data.message || t('auth.registrationFailed'));
       }
     } catch (error) {
       console.error("Registration error:", error);
-      const msg = error.response?.data?.message || "Registration failed";
+      const msg = error.response?.data?.message || t('auth.registrationFailed');
       toast.error(msg);
       
       // Set field-specific errors if available
@@ -89,13 +91,13 @@ const Register = (props) => {
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Site Generator</h1>
-          <h2 className="mt-2 text-xl text-gray-600">Create your account</h2>
+          <h2 className="mt-2 text-xl text-gray-600">{t('auth.registerTitle')}</h2>
         </div>
 
         <Card>
           <form onSubmit={handleRegister} className="space-y-4">
             <Input
-              label="Full Name"
+              label={t('auth.fullName')}
               name="name"
               type="text"
               value={formData.name}
@@ -106,7 +108,7 @@ const Register = (props) => {
             />
 
             <Input
-              label="Email Address"
+              label={t('auth.email')}
               name="email"
               type="email"
               value={formData.email}
@@ -118,7 +120,7 @@ const Register = (props) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Password"
+                label={t('auth.password')}
                 name="password"
                 type="password"
                 value={formData.password}
@@ -129,7 +131,7 @@ const Register = (props) => {
               />
 
               <Input
-                label="Confirm Password"
+                label={t('auth.confirmPassword')}
                 name="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
@@ -153,10 +155,7 @@ const Register = (props) => {
                 />
               </div>
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                I accept the{" "}
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
-                  Terms and Conditions
-                </a>
+                {t('auth.terms')}
               </label>
             </div>
 
@@ -167,17 +166,17 @@ const Register = (props) => {
               fullWidth
               disabled={loading}
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t('auth.creatingAccount') : t('auth.registerButton')}
             </Button>
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{" "}
+                {t('auth.hasAccount')}{" "}
                 <Link
                   to="/login"
                   className="font-medium text-blue-600 hover:text-blue-500"
                 >
-                  Sign in here
+                  {t('auth.loginButton')}
                 </Link>
               </p>
             </div>

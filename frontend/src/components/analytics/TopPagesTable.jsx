@@ -1,15 +1,17 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const TopPagesTable = ({ data }) => {
+  const { t } = useTranslation();
   const [sortField, setSortField] = useState('views');
   const [sortDirection, setSortDirection] = useState('desc');
 
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Pages</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.topPages')}</h3>
         <div className="text-center py-8 text-gray-400">
-          <p>No page data available</p>
+          <p>{t('analytics.noPageData')}</p>
         </div>
       </div>
     );
@@ -38,8 +40,8 @@ const TopPagesTable = ({ data }) => {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">Top Pages</h3>
-        <p className="text-sm text-gray-600 mt-1">Most visited pages on your site</p>
+        <h3 className="text-lg font-semibold text-gray-900">{t('analytics.topPages')}</h3>
+        <p className="text-sm text-gray-600 mt-1">{t('analytics.mostVisited')}</p>
       </div>
       
       <div className="overflow-x-auto">
@@ -52,7 +54,7 @@ const TopPagesTable = ({ data }) => {
                 onClick={() => handleSort('path')}
               >
                 <div className="flex items-center gap-1">
-                  Path <SortIcon field="path" sortField={sortField} sortDirection={sortDirection} />
+                  {t('analytics.path')} <SortIcon field="path" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -61,7 +63,7 @@ const TopPagesTable = ({ data }) => {
                 onClick={() => handleSort('title')}
               >
                 <div className="flex items-center gap-1">
-                  Title <SortIcon field="title" sortField={sortField} sortDirection={sortDirection} />
+                  {t('analytics.pageTitle')} <SortIcon field="title" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -70,7 +72,7 @@ const TopPagesTable = ({ data }) => {
                 onClick={() => handleSort('views')}
               >
                 <div className="flex items-center justify-end gap-1">
-                  Views <SortIcon field="views" sortField={sortField} sortDirection={sortDirection} />
+                  {t('analytics.views')} <SortIcon field="views" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
               <th
@@ -79,7 +81,7 @@ const TopPagesTable = ({ data }) => {
                 onClick={() => handleSort('unique_visitors')}
               >
                 <div className="flex items-center justify-end gap-1">
-                  Unique Visitors <SortIcon field="unique_visitors" sortField={sortField} sortDirection={sortDirection} />
+                  {t('analytics.uniqueVisitors')} <SortIcon field="unique_visitors" sortField={sortField} sortDirection={sortDirection} />
                 </div>
               </th>
             </tr>

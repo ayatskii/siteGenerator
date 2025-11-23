@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card, Button } from "../components/ui";
 import { HiGlobeAlt, HiTemplate, HiPhotograph, HiChartBar } from "react-icons/hi";
 import api from "../services/api";
@@ -9,6 +10,7 @@ import api from "../services/api";
  * Shows overview stats and quick actions
  */
 const Home = () => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     total_sites: 0,
     sites_deployed: 0,
@@ -30,29 +32,29 @@ const Home = () => {
 
   const quickActions = [
     {
-      title: "Create New Site",
-      description: "Generate a new affiliate website",
+      title: t('home.actions.createSite'),
+      description: t('home.actions.createSiteDesc'),
       icon: HiGlobeAlt,
       link: "/sites-list",
       color: "blue",
     },
     {
-      title: "Manage Templates",
-      description: "Upload and configure site templates",
+      title: t('home.actions.manageTemplates'),
+      description: t('home.actions.manageTemplatesDesc'),
       icon: HiTemplate,
       link: "/templates",
       color: "purple",
     },
     {
-      title: "Media Library",
-      description: "Upload and organize media files",
+      title: t('home.actions.mediaLibrary'),
+      description: t('home.actions.mediaLibraryDesc'),
       icon: HiPhotograph,
       link: "/media-library",
       color: "green",
     },
     {
-      title: "View Analytics",
-      description: "Track site performance and metrics",
+      title: t('home.actions.viewAnalytics'),
+      description: t('home.actions.viewAnalyticsDesc'),
       icon: HiChartBar,
       link: "/analytics",
       color: "yellow",
@@ -70,9 +72,9 @@ const Home = () => {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('home.title')}</h1>
         <p className="mt-2 text-gray-600">
-          Welcome to your site management dashboard. Quick actions and overview below.
+          {t('home.welcome')}
         </p>
       </div>
 
@@ -80,25 +82,25 @@ const Home = () => {
       <div className="grid grid-cols-4 gap-6 mb-8">
         <Card padding="md" hoverable>
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Total Sites</p>
+            <p className="text-sm font-medium text-gray-600">{t('home.totalSites')}</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total_sites}</p>
           </div>
         </Card>
         <Card padding="md" hoverable>
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Published Pages</p>
+            <p className="text-sm font-medium text-gray-600">{t('home.publishedPages')}</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total_pages}</p>
           </div>
         </Card>
         <Card padding="md" hoverable>
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Deployed Sites</p>
+            <p className="text-sm font-medium text-gray-600">{t('home.deployedSites')}</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{stats.sites_deployed}</p>
           </div>
         </Card>
         <Card padding="md" hoverable>
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Storage Used</p>
+            <p className="text-sm font-medium text-gray-600">{t('home.storageUsed')}</p>
             <p className="text-3xl font-bold text-gray-900 mt-2">{stats.storage_used} MB</p>
           </div>
         </Card>
@@ -106,7 +108,7 @@ const Home = () => {
 
       {/* Quick Actions - Always 4 columns horizontal */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('home.quickActions')}</h2>
         <div className="grid grid-cols-4 gap-6">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -129,13 +131,13 @@ const Home = () => {
 
       {/* Recent Activity */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('home.recentActivity')}</h2>
         <Card>
           <div className="text-center py-8 text-gray-500">
-            <p>No recent activity to display.</p>
+            <p>{t('home.noActivity')}</p>
             <Link to="/sites-list">
               <Button variant="primary" className="mt-4">
-                Create Your First Site
+                {t('home.createFirstSite')}
               </Button>
             </Link>
           </div>

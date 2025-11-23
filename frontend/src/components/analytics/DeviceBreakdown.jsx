@@ -1,4 +1,5 @@
 import { Bar } from 'react-chartjs-2';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,12 +21,14 @@ ChartJS.register(
 );
 
 const DeviceBreakdown = ({ data }) => {
+  const { t } = useTranslation();
+
   if (!data || Object.keys(data).length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Device Breakdown</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.deviceBreakdown')}</h3>
         <div className="flex items-center justify-center h-64 text-gray-400">
-          <p>No device data available</p>
+          <p>{t('analytics.noDeviceData')}</p>
         </div>
       </div>
     );
@@ -38,7 +41,7 @@ const DeviceBreakdown = ({ data }) => {
     labels: Object.keys(devices),
     datasets: [
       {
-        label: 'Device Usage (%)',
+        label: t('analytics.deviceUsage'),
         data: Object.values(devices),
         backgroundColor: 'rgba(59, 130, 246, 0.6)',
         borderColor: 'rgb(59, 130, 246)',
@@ -53,7 +56,7 @@ const DeviceBreakdown = ({ data }) => {
     labels: browserEntries.map(([name]) => name),
     datasets: [
       {
-        label: 'Browser Usage (%)',
+        label: t('analytics.browserUsage'),
         data: browserEntries.map(([, value]) => value),
         backgroundColor: 'rgba(16, 185, 129, 0.6)',
         borderColor: 'rgb(16, 185, 129)',
@@ -103,11 +106,11 @@ const DeviceBreakdown = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Device & Browser Breakdown</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.deviceBrowserBreakdown')}</h3>
       
       {/* Devices */}
       <div className="mb-6">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Devices</h4>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">{t('analytics.devices')}</h4>
         <div className="h-32">
           <Bar data={deviceData} options={chartOptions} />
         </div>
@@ -115,7 +118,7 @@ const DeviceBreakdown = ({ data }) => {
 
       {/* Browsers */}
       <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Top Browsers</h4>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">{t('analytics.topBrowsers')}</h4>
         <div className="h-40">
           <Bar data={browserData} options={chartOptions} />
         </div>
@@ -124,7 +127,7 @@ const DeviceBreakdown = ({ data }) => {
       {/* OS Stats */}
       {Object.keys(operating_systems).length > 0 && (
         <div className="mt-6 pt-4 border-t border-gray-200">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Operating Systems</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">{t('analytics.operatingSystems')}</h4>
           <div className="space-y-2">
             {Object.entries(operating_systems).slice(0, 5).map(([os, percentage], index) => (
               <div key={index} className="flex items-center justify-between">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 
 const PromptManager = () => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('text'); // 'text' or 'image'
     const [prompts, setPrompts] = useState([]);
     const [imagePrompts, setImagePrompts] = useState([]);
@@ -61,13 +63,12 @@ const PromptManager = () => {
             setLoading(false);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load prompts.");
+            toast.error(t('prompts.loadError'));
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchPrompts();
     }, [fetchPrompts]);
 
@@ -123,42 +124,42 @@ const PromptManager = () => {
 
             if (currentPrompt) {
                 await api.put(`/api/prompts/${currentPrompt.id}/`, dataToSave);
-                toast.success("Prompt updated!");
+                toast.success(t('prompts.promptUpdated'));
             } else {
                 await api.post('/api/prompts/', dataToSave);
-                toast.success("Prompt created!");
+                toast.success(t('prompts.promptCreated'));
             }
             setIsEditing(false);
             fetchPrompts();
         } catch (err) {
             console.error(err);
-            toast.error("Failed to save prompt.");
+            toast.error(t('prompts.saveError'));
         }
     };
 
-    if (loading) return <div className="p-8">Loading...</div>;
+    if (loading) return <div className="p-8">{t('common.loading')}</div>;
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Prompt Manager</h1>
+                <h1 className="text-2xl font-bold text-gray-900">{t('prompts.title')}</h1>
                 {!isEditing && (
                     <button 
                         onClick={handleCreate}
                         className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                     >
-                        Create New Prompt
+                        {t('prompts.createNew')}
                     </button>
                 )}
             </div>
 
             {isEditing ? (
                 <div className="bg-white shadow rounded-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4">{currentPrompt ? 'Edit Prompt' : 'New Prompt'}</h2>
+                    <h2 className="text-xl font-semibold mb-4">{currentPrompt ? t('prompts.editPrompt') : t('prompts.newPrompt')}</h2>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Name</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('prompts.name')}</label>
                                 <input
                                     type="text"
                                     name="name"
@@ -169,7 +170,7 @@ const PromptManager = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Target Type</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('prompts.targetType')}</label>
                                 <select
                                     name="target_type"
                                     value={formData.target_type}
@@ -182,7 +183,7 @@ const PromptManager = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">AI Model</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('prompts.aiModel')}</label>
                                 <select
                                     name="ai_model"
                                     value={formData.ai_model}
@@ -195,7 +196,7 @@ const PromptManager = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700">Temperature ({formData.temperature})</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('prompts.temperature')} ({formData.temperature})</label>
                                 <input
                                     type="range"
                                     name="temperature"
@@ -210,7 +211,7 @@ const PromptManager = () => {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('prompts.description')}</label>
                             <input
                                 type="text"
                                 name="description"
@@ -222,8 +223,8 @@ const PromptManager = () => {
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Prompt Template
-                                <span className="text-xs text-gray-500 ml-2">Use &#123;&#123;variable&#125;&#125; for placeholders. Available: keywords, brand, language, context...</span>
+                                {t('prompts.template')}
+                                <span className="text-xs text-gray-500 ml-2">{t('prompts.templateHelp')}</span>
                             </label>
                             <textarea
                                 name="template"
@@ -241,13 +242,13 @@ const PromptManager = () => {
                                 onClick={() => setIsEditing(false)}
                                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                             >
-                                Cancel
+                                {t('prompts.cancel')}
                             </button>
                             <button
                                 type="submit"
                                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                             >
-                                Save Prompt
+                                {t('prompts.savePrompt')}
                             </button>
                         </div>
                     </form>
@@ -260,8 +261,8 @@ const PromptManager = () => {
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900">{prompt.name}</h3>
                                     <div className="text-sm text-gray-500">
-                                        <span className="mr-4">Type: {prompt.target_type}</span>
-                                        <span>Model: {prompt.ai_model}</span>
+                                        <span className="mr-4">{t('prompts.type')}: {prompt.target_type}</span>
+                                        <span>{t('prompts.model')}: {prompt.ai_model}</span>
                                     </div>
                                     <p className="text-sm text-gray-500 mt-1">{prompt.description}</p>
                                 </div>
@@ -269,12 +270,12 @@ const PromptManager = () => {
                                     onClick={() => handleEdit(prompt)}
                                     className="text-indigo-600 hover:text-indigo-900"
                                 >
-                                    Edit
+                                    {t('prompts.edit')}
                                 </button>
                             </li>
                         ))}
                         {prompts.length === 0 && (
-                            <li className="px-6 py-4 text-center text-gray-500">No prompts found. Create one to get started.</li>
+                            <li className="px-6 py-4 text-center text-gray-500">{t('prompts.noPrompts')}</li>
                         )}
                     </ul>
                 </div>
@@ -284,4 +285,3 @@ const PromptManager = () => {
 };
 
 export default PromptManager;
-

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { format, subDays } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import analyticsService from '../../services/analyticsService';
 import AnalyticsSummary from './AnalyticsSummary';
 import PageViewsChart from './PageViewsChart';
@@ -14,6 +15,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const AnalyticsDashboard = ({ siteId: propSiteId }) => {
+  const { t } = useTranslation();
   const params = useParams();
   const siteId = propSiteId || params.siteId;
   
@@ -77,7 +79,7 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Checking configuration...</p>
+          <p className="mt-4 text-gray-600">{t('analytics.checkConfig')}</p>
         </div>
       </div>
     );
@@ -99,7 +101,7 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading analytics...</p>
+          <p className="mt-4 text-gray-600">{t('analytics.loading')}</p>
         </div>
       </div>
     );
@@ -109,20 +111,20 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <h3 className="text-red-800 font-semibold mb-2">Error Loading Analytics</h3>
+          <h3 className="text-red-800 font-semibold mb-2">{t('analytics.errorTitle')}</h3>
           <p className="text-red-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
-            Retry
+            {t('analytics.retry')}
           </button>
           <div className="mt-4 pt-4 border-t border-red-200">
              <button 
                 onClick={() => setHasConfig(false)}
                 className="text-sm text-red-700 hover:text-red-900 underline"
              >
-                Check Configuration
+                {t('analytics.checkConfigLink')}
              </button>
           </div>
         </div>
@@ -135,14 +137,14 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-            <p className="text-gray-600">Track your site's performance and visitor insights</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('analytics.title')}</h1>
+            <p className="text-gray-600">{t('analytics.subtitle')}</p>
         </div>
         <button 
             onClick={() => setHasConfig(false)}
             className="text-sm text-blue-600 hover:text-blue-800"
         >
-            Configure Settings
+            {t('analytics.configure')}
         </button>
       </div>
 
@@ -151,7 +153,7 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
         <div className="flex flex-wrap items-center gap-4 justify-between">
           {/* Date Range Picker */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Date Range:</label>
+            <label className="text-sm font-medium text-gray-700">{t('analytics.dateRange')}</label>
             <DatePicker
               selected={startDate}
               onChange={setStartDate}
@@ -162,7 +164,7 @@ const AnalyticsDashboard = ({ siteId: propSiteId }) => {
               className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               dateFormat="MMM d, yyyy"
             />
-            <span className="text-gray-500">to</span>
+            <span className="text-gray-500">{t('analytics.to')}</span>
             <DatePicker
               selected={endDate}
               onChange={setEndDate}

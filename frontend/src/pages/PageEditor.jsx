@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Input, Badge, Modal } from '../components/ui';
 import { HiPlus, HiTrash, HiArrowUp, HiArrowDown, HiSave, HiEye, HiSparkles, HiDuplicate } from 'react-icons/hi';
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { useTranslation } from "react-i18next";
 import api from '../services/api';
 import { toast } from 'react-toastify';
 import GenerationModal from "../components/GenerationModal";
@@ -10,6 +11,7 @@ import GenerationModal from "../components/GenerationModal";
 const PageEditor = () => {
   const { siteId, pageId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [generationModalOpen, setGenerationModalOpen] = useState(false);
@@ -45,7 +47,7 @@ const PageEditor = () => {
       const res = await api.get(`/api/pages/${pageId}/`);
       setPageData(res.data);
     } catch (error) {
-      toast.error("Failed to load page data");
+      toast.error(t('pageEditor.loadError'));
     }
   };
 
@@ -73,7 +75,7 @@ const PageEditor = () => {
     try {
       if (pageId === 'new') {
         const res = await api.post(`/api/pages/`, { ...pageData, site: siteId });
-        toast.success("Page created successfully!");
+        toast.success(t('pageEditor.saveSuccess'));
         navigate(`/sites/${siteId}/pages/${res.data.id}`);
       } else {
         await api.put(`/api/pages/${pageId}/`, pageData);
@@ -87,10 +89,10 @@ const PageEditor = () => {
           }
         }
         
-        toast.success("Page saved successfully!");
+        toast.success(t('pageEditor.saveSuccess'));
       }
     } catch (error) {
-      toast.error("Failed to save page");
+      toast.error(t('pageEditor.saveError'));
     } finally {
       setSaving(false);
     }
@@ -135,7 +137,7 @@ const PageEditor = () => {
   };
 
   const deleteBlock = (index) => {
-    if (!confirm('Delete this block?')) return;
+    if (!confirm(t('pageEditor.deleteBlockConfirm'))) return;
     setBlocks(blocks.filter((_, i) => i !== index));
   };
 
@@ -154,19 +156,19 @@ const PageEditor = () => {
       previewWindow.document.close();
     } catch (error) {
       console.error("Preview failed", error);
-      toast.error("Failed to generate preview");
+      toast.error(t('pageEditor.previewError'));
     }
   };
 
   const blockTypes = [
-    { type: 'hero', label: 'Hero Section', icon: '🎯' },
-    { type: 'article', label: 'Article/Text', icon: '📝' },
-    { type: 'image', label: 'Image', icon: '🖼️' },
-    { type: 'text_image', label: 'Text + Image', icon: '📄' },
-    { type: 'cta', label: 'Call to Action', icon: '🎯' },
-    { type: 'faq', label: 'FAQ', icon: '❓' },
-    { type: 'custom', label: 'Custom HTML', icon: 'code' },
-    { type: 'swiper', label: 'Swiper Slider', icon: 'view_carousel' },
+    { type: 'hero', label: t('pageEditor.blockHero'), icon: '🎯' },
+    { type: 'article', label: t('pageEditor.blockArticle'), icon: '📝' },
+    { type: 'image', label: t('pageEditor.blockImage'), icon: '🖼️' },
+    { type: 'text_image', label: t('pageEditor.blockTextImage'), icon: '📄' },
+    { type: 'cta', label: t('pageEditor.blockCta'), icon: '🎯' },
+    { type: 'faq', label: t('pageEditor.blockFaq'), icon: '❓' },
+    { type: 'custom', label: t('pageEditor.blockCustom'), icon: 'code' },
+    { type: 'swiper', label: t('pageEditor.blockSwiper'), icon: 'view_carousel' },
   ];
 
   const renderBlockEditor = (block, index) => {
@@ -177,23 +179,23 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <Input
-              label="Title"
+              label={t('pageEditor.blockTitle')}
               value={content.title || ''}
               onChange={(e) => updateBlockContent(index, 'title', e.target.value)}
             />
             <Input
-              label="Subtitle"
+              label={t('pageEditor.blockSubtitle')}
               value={content.subtitle || ''}
               onChange={(e) => updateBlockContent(index, 'subtitle', e.target.value)}
             />
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label="CTA Text"
+                label={t('pageEditor.blockCtaText')}
                 value={content.cta_text || ''}
                 onChange={(e) => updateBlockContent(index, 'cta_text', e.target.value)}
               />
               <Input
-                label="CTA Link"
+                label={t('pageEditor.blockCtaLink')}
                 value={content.cta_link || ''}
                 onChange={(e) => updateBlockContent(index, 'cta_link', e.target.value)}
               />
@@ -205,12 +207,12 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <Input
-              label="Heading"
+              label={t('pageEditor.blockHeading')}
               value={content.heading || ''}
               onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.blockContent')}</label>
               <textarea
                 value={content.body || ''}
                 onChange={(e) => updateBlockContent(index, 'body', e.target.value)}
@@ -225,17 +227,17 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <Input
-              label="Image URL"
+              label={t('pageEditor.blockImageUrl')}
               value={content.image_url || ''}
               onChange={(e) => updateBlockContent(index, 'image_url', e.target.value)}
             />
             <Input
-              label="Alt Text"
+              label={t('pageEditor.blockAltText')}
               value={content.alt_text || ''}
               onChange={(e) => updateBlockContent(index, 'alt_text', e.target.value)}
             />
             <Input
-              label="Caption"
+              label={t('pageEditor.blockCaption')}
               value={content.caption || ''}
               onChange={(e) => updateBlockContent(index, 'caption', e.target.value)}
             />
@@ -246,12 +248,12 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <Input
-              label="Heading"
+              label={t('pageEditor.blockHeading')}
               value={content.heading || ''}
               onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Text</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.blockText')}</label>
               <textarea
                 value={content.text || ''}
                 onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
@@ -260,12 +262,12 @@ const PageEditor = () => {
               />
             </div>
             <Input
-              label="Image URL"
+              label={t('pageEditor.blockImageUrl')}
               value={content.image_url || ''}
               onChange={(e) => updateBlockContent(index, 'image_url', e.target.value)}
             />
             <div>
-               <label className="block text-sm font-medium text-gray-700 mb-1">Image Position</label>
+               <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.blockImagePosition')}</label>
                <select
                  value={content.image_position || 'right'}
                  onChange={(e) => updateBlockContent(index, 'image_position', e.target.value)}
@@ -282,23 +284,23 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <Input
-              label="Heading"
+              label={t('pageEditor.blockHeading')}
               value={content.heading || ''}
               onChange={(e) => updateBlockContent(index, 'heading', e.target.value)}
             />
             <Input
-              label="Text"
+              label={t('pageEditor.blockText')}
               value={content.text || ''}
               onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
             />
             <div className="grid grid-cols-2 gap-3">
               <Input
-                label="Button Text"
+                label={t('pageEditor.blockButtonText')}
                 value={content.button_text || ''}
                 onChange={(e) => updateBlockContent(index, 'button_text', e.target.value)}
               />
               <Input
-                label="Button Link"
+                label={t('pageEditor.blockButtonLink')}
                 value={content.button_link || ''}
                 onChange={(e) => updateBlockContent(index, 'button_link', e.target.value)}
               />
@@ -310,7 +312,7 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Questions (JSON)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.blockQuestions')}</label>
               <textarea
                 value={JSON.stringify(content.questions || [], null, 2)}
                 onChange={(e) => {
@@ -323,7 +325,7 @@ const PageEditor = () => {
                 rows={6}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               />
-              <p className="text-xs text-gray-500 mt-1">Format: [{`{"question": "...", "answer": "..."}`}]</p>
+              <p className="text-xs text-gray-500 mt-1">{t('pageEditor.blockQuestionsHint')}</p>
             </div>
           </div>
         );
@@ -332,7 +334,7 @@ const PageEditor = () => {
         return (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Custom HTML</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.blockCustomHtml')}</label>
               <textarea
                 value={content.html || ''}
                 onChange={(e) => updateBlockContent(index, 'html', e.target.value)}
@@ -347,9 +349,9 @@ const PageEditor = () => {
       case 'swiper':
         return (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Swiper Preset ID (Implementation Pending)</p>
+            <p className="text-sm text-gray-600">{t('pageEditor.blockPending')}</p>
              <Input
-              label="Preset ID"
+              label={t('pageEditor.blockPresetId')}
               value={content.preset_id || ''}
               onChange={(e) => updateBlockContent(index, 'preset_id', e.target.value)}
             />
@@ -362,7 +364,7 @@ const PageEditor = () => {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-12">Loading...</div>;
+    return <div className="flex justify-center py-12">{t('common.loading')}</div>;
   }
 
   return (
@@ -371,22 +373,22 @@ const PageEditor = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {pageId === 'new' ? 'Create Page' : 'Edit Page'}
+            {pageId === 'new' ? t('pageEditor.createPage') : t('pageEditor.editPage')}
           </h1>
-          <p className="text-sm text-gray-600">Configure page settings and content blocks</p>
+          <p className="text-sm text-gray-600">{t('pageEditor.configure')}</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" onClick={() => navigate(`/sites/${siteId}`)}>
-            Cancel
+            {t('pageEditor.cancel')}
           </Button>
           <Button variant="secondary" icon={<HiEye className="w-5 h-5" />} onClick={handlePreview} disabled={saving || pageId === 'new'}>
-            Preview
+            {t('pageEditor.preview')}
           </Button>
           <Button variant="primary" icon={<HiSparkles className="w-5 h-5" />} onClick={() => setGenerationModalOpen(true)} disabled={saving || pageId === 'new'}>
-            Generate
+            {t('pageEditor.generate')}
           </Button>
           <Button variant="success" icon={<HiSave className="w-5 h-5" />} onClick={handleSavePage} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Page'}
+            {saving ? t('pageEditor.saving') : t('pageEditor.save')}
           </Button>
         </div>
       </div>
@@ -448,23 +450,23 @@ const PageEditor = () => {
             className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors flex items-center justify-center space-x-2"
           >
             <HiPlus className="w-5 h-5" />
-            <span>Add Content Block</span>
+            <span>{t('pageEditor.addContentBlock')}</span>
           </button>
         </div>
 
         {/* Page Settings (Right Column) */}
         <div className="lg:col-span-1">
-          <Card title="Page Settings">
+          <Card title={t('pageEditor.pageSettings')}>
             <div className="space-y-4">
               <Input
-                label="Title"
+                label={t('pageEditor.title')}
                 name="title"
                 value={pageData.title}
                 onChange={handlePageChange}
                 required
               />
               <Input
-                label="Slug"
+                label={t('pageEditor.slug')}
                 name="slug"
                 value={pageData.slug}
                 onChange={handlePageChange}
@@ -480,21 +482,21 @@ const PageEditor = () => {
                   className="h-4 w-4 text-blue-600 rounded border-gray-300"
                 />
                 <label htmlFor="published" className="text-sm font-medium text-gray-700">
-                  Published
+                  {t('pageEditor.published')}
                 </label>
               </div>
               
               <hr className="border-gray-200" />
-              <h3 className="font-medium text-gray-900">SEO Settings</h3>
+              <h3 className="font-medium text-gray-900">{t('pageEditor.seoSettings')}</h3>
               
               <Input
-                label="Meta Title"
+                label={t('pageEditor.metaTitle')}
                 name="meta_title"
                 value={pageData.meta_title || ''}
                 onChange={handlePageChange}
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Meta Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('pageEditor.metaDescription')}</label>
                 <textarea
                   name="meta_description"
                   value={pageData.meta_description || ''}
@@ -504,7 +506,7 @@ const PageEditor = () => {
                 />
               </div>
               <Input
-                label="H1 Heading"
+                label={t('pageEditor.h1Heading')}
                 name="h1_heading"
                 value={pageData.h1_heading || ''}
                 onChange={handlePageChange}
@@ -527,7 +529,7 @@ const PageEditor = () => {
       <Modal
         isOpen={blockModal}
         onClose={() => setBlockModal(false)}
-        title="Add Content Block"
+        title={t('pageEditor.addBlockTitle')}
         size="md"
       >
         <div className="grid grid-cols-2 gap-3">

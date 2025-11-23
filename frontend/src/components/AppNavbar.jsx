@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui";
 
 /**
@@ -8,6 +9,7 @@ import { Button } from "./ui";
  */
 const AppNavBar = (props) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isLoggedIn, setIsLoggedIn, setName, setEmail } = props;
 
   const handleLogout = () => {
@@ -35,17 +37,17 @@ const AppNavBar = (props) => {
                   to="/login"
                   className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors"
                 >
-                  Sign In
+                  {t('auth.loginButton')}
                 </Link>
                 <Link to="/register">
                   <Button variant="primary" size="sm">
-                    Get Started
+                    {t('auth.getStarted')}
                   </Button>
                 </Link>
               </>
             ) : (
               <Button variant="outline" size="sm" onClick={handleLogout}>
-                Sign Out
+                {t('nav.logout')}
               </Button>
             )}
           </div>

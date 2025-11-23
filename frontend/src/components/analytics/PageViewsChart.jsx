@@ -1,4 +1,5 @@
 import { Line } from 'react-chartjs-2';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,12 +25,14 @@ ChartJS.register(
 );
 
 const PageViewsChart = ({ data }) => {
+  const { t } = useTranslation();
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Page Views Timeline</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.pageViewsTimeline')}</h3>
         <div className="flex items-center justify-center h-64 text-gray-400">
-          <p>No data available</p>
+          <p>{t('analytics.noData')}</p>
         </div>
       </div>
     );
@@ -39,7 +42,7 @@ const PageViewsChart = ({ data }) => {
     labels: data.map(item => item.date),
     datasets: [
       {
-        label: 'Page Views',
+        label: t('analytics.pageViews'),
         data: data.map(item => item.views),
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -52,7 +55,7 @@ const PageViewsChart = ({ data }) => {
         pointBorderWidth: 2
       },
       {
-        label: 'Unique Visitors',
+        label: t('analytics.uniqueVisitors'),
         data: data.map(item => item.unique_visitors),
         borderColor: 'rgb(16, 185, 129)',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -120,7 +123,7 @@ const PageViewsChart = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Page Views Timeline</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.pageViewsTimeline')}</h3>
       <div className="h-64">
         <Line data={chartData} options={options} />
       </div>

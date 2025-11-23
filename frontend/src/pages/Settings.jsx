@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, Card, Button, Input, Table, Badge, Modal } from "../components/ui";
-import { HiPlus, HiPencil, HiTrash, HiGlobe, HiKey, HiLink, HiCode, HiPhotograph } from "react-icons/hi";
+import { HiPlus, HiPencil, HiTrash, HiGlobe, HiKey, HiLink, HiCode } from "react-icons/hi";
 import SwiperPresetModal from "../components/SwiperPresetModal";
 import api from "../services/api";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const Settings = () => {
+  const { t } = useTranslation();
+
   // Languages State
   const [languages, setLanguages] = useState([]);
   const [languageModal, setLanguageModal] = useState(false);
@@ -33,7 +36,6 @@ const Settings = () => {
   useEffect(() => {
     fetchLanguages();
     fetchTokens();
-    fetchTokens();
     fetchAffiliates();
     fetchPresets();
   }, []);
@@ -52,28 +54,28 @@ const Settings = () => {
     try {
       if (currentLanguage) {
         await api.put(`/api/languages/${currentLanguage.id}/`, languageForm);
-        toast.success("Language updated successfully");
+        toast.success(t('settings.languages.updateSuccess'));
       } else {
         await api.post("/api/languages/", languageForm);
-        toast.success("Language created successfully");
+        toast.success(t('settings.languages.createSuccess'));
       }
       setLanguageModal(false);
       setCurrentLanguage(null);
       setLanguageForm({ code: "", name: "", active: true });
       fetchLanguages();
     } catch (error) {
-      toast.error("Failed to save language");
+      toast.error(t('settings.languages.saveError'));
     }
   };
 
   const handleDeleteLanguage = async (id) => {
-    if (!confirm("Are you sure you want to delete this language?")) return;
+    if (!confirm(t('settings.languages.deleteConfirm'))) return;
     try {
       await api.delete(`/api/languages/${id}/`);
-      toast.success("Language deleted successfully");
+      toast.success(t('settings.languages.deleteSuccess'));
       fetchLanguages();
     } catch (error) {
-      toast.error("Failed to delete language");
+      toast.error(t('settings.languages.deleteError'));
     }
   };
 
@@ -91,28 +93,28 @@ const Settings = () => {
     try {
       if (currentToken) {
         await api.put(`/api/tokens/${currentToken.id}/`, tokenForm);
-        toast.success("Token updated successfully");
+        toast.success(t('settings.tokens.updateSuccess'));
       } else {
         await api.post("/api/tokens/", tokenForm);
-        toast.success("Token created successfully");
+        toast.success(t('settings.tokens.createSuccess'));
       }
       setTokenModal(false);
       setCurrentToken(null);
       setTokenForm({ name: "", service_type: "cloudflare", token_value: "" });
       fetchTokens();
     } catch (error) {
-      toast.error("Failed to save token");
+      toast.error(t('settings.tokens.saveError'));
     }
   };
 
   const handleDeleteToken = async (id) => {
-    if (!confirm("Are you sure you want to delete this token?")) return;
+    if (!confirm(t('settings.tokens.deleteConfirm'))) return;
     try {
       await api.delete(`/api/tokens/${id}/`);
-      toast.success("Token deleted successfully");
+      toast.success(t('settings.tokens.deleteSuccess'));
       fetchTokens();
     } catch (error) {
-      toast.error("Failed to delete token");
+      toast.error(t('settings.tokens.deleteError'));
     }
   };
 
@@ -133,31 +135,31 @@ const Settings = () => {
           ...affiliateForm,
           url: affiliateForm.link_template,
         });
-        toast.success("Affiliate link updated successfully");
+        toast.success(t('settings.affiliates.updateSuccess'));
       } else {
         await api.post("/api/affiliates/", {
           ...affiliateForm,
           url: affiliateForm.link_template,
         });
-        toast.success("Affiliate link created successfully");
+        toast.success(t('settings.affiliates.createSuccess'));
       }
       setAffiliateModal(false);
       setCurrentAffiliate(null);
       setAffiliateForm({ name: "", link_type: "static", link_template: "" });
       fetchAffiliates();
     } catch (error) {
-      toast.error("Failed to save affiliate link");
+      toast.error(t('settings.affiliates.saveError'));
     }
   };
 
   const handleDeleteAffiliate = async (id) => {
-    if (!confirm("Are you sure you want to delete this affiliate link?")) return;
+    if (!confirm(t('settings.affiliates.deleteConfirm'))) return;
     try {
       await api.delete(`/api/affiliates/${id}/`);
-      toast.success("Affiliate link deleted successfully");
+      toast.success(t('settings.affiliates.deleteSuccess'));
       fetchAffiliates();
     } catch (error) {
-      toast.error("Failed to delete affiliate link");
+      toast.error(t('settings.affiliates.deleteError'));
     }
   };
 
@@ -175,39 +177,39 @@ const Settings = () => {
     try {
       if (currentPreset) {
         await api.patch(`/api/presets/${currentPreset.id}/`, presetData);
-        toast.success("Preset updated successfully");
+        toast.success(t('settings.presets.updateSuccess'));
       } else {
         await api.post("/api/presets/", presetData);
-        toast.success("Preset created successfully");
+        toast.success(t('settings.presets.createSuccess'));
       }
       setPresetModal(false);
       setCurrentPreset(null);
       fetchPresets();
     } catch (error) {
       console.error("Error saving preset:", error);
-      toast.error("Failed to save preset");
+      toast.error(t('settings.presets.saveError'));
     }
   };
 
   const handleDeletePreset = async (id) => {
-    if (!confirm("Are you sure you want to delete this preset?")) return;
+    if (!confirm(t('settings.presets.deleteConfirm'))) return;
     try {
       await api.delete(`/api/presets/${id}/`);
-      toast.success("Preset deleted successfully");
+      toast.success(t('settings.presets.deleteSuccess'));
       fetchPresets();
     } catch (error) {
-      toast.error("Failed to delete preset");
+      toast.error(t('settings.presets.deleteError'));
     }
   };
 
   const tabs = [
     {
-      label: "Languages",
+      label: t('settings.tabs.languages'),
       icon: <HiGlobe className="w-5 h-5" />,
       content: (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Language Presets</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('settings.languages.title')}</h2>
             <Button
               variant="primary"
               size="sm"
@@ -218,23 +220,23 @@ const Settings = () => {
                 setLanguageModal(true);
               }}
             >
-              Add Language
+              {t('settings.languages.add')}
             </Button>
           </div>
           <Table
             columns={[
-              { header: "Code", render: (lang) => <span className="font-mono">{lang.code}</span> },
-              { header: "Name", accessor: "name" },
+              { header: t('settings.languages.code'), render: (lang) => <span className="font-mono">{lang.code}</span> },
+              { header: t('settings.languages.name'), accessor: "name" },
               {
-                header: "Status",
+                header: t('settings.languages.status'),
                 render: (lang) => (
                   <Badge variant={lang.active ? "success" : "default"}>
-                    {lang.active ? "Active" : "Inactive"}
+                    {lang.active ? t('settings.languages.active') : t('settings.languages.inactive')}
                   </Badge>
                 ),
               },
               {
-                header: "Actions",
+                header: t('settings.languages.actions'),
                 render: (lang) => (
                   <div className="flex space-x-2">
                     <Button
@@ -260,18 +262,18 @@ const Settings = () => {
               },
             ]}
             data={languages}
-            emptyMessage="No languages configured"
+            emptyMessage={t('settings.languages.empty')}
           />
         </div>
       ),
     },
     {
-      label: "API Tokens",
+      label: t('settings.tabs.apiTokens'),
       icon: <HiKey className="w-5 h-5" />,
       content: (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">API Tokens</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('settings.tokens.title')}</h2>
             <Button
               variant="primary"
               size="sm"
@@ -282,15 +284,15 @@ const Settings = () => {
                 setTokenModal(true);
               }}
             >
-              Add Token
+              {t('settings.tokens.add')}
             </Button>
           </div>
           <Table
             columns={[
-              { header: "Name", accessor: "name" },
-              { header: "Service", accessor: "service_type" },
+              { header: t('settings.tokens.name'), accessor: "name" },
+              { header: t('settings.tokens.service'), accessor: "service_type" },
               {
-                header: "Token",
+                header: t('settings.tokens.token'),
                 render: (token) => (
                   <div className="flex items-center space-x-2">
                     <span className="font-mono text-sm">
@@ -300,13 +302,13 @@ const Settings = () => {
                       onClick={() => setShowToken({ ...showToken, [token.id]: !showToken[token.id] })}
                       className="text-blue-600 hover:text-blue-800 text-xs"
                     >
-                      {showToken[token.id] ? "Hide" : "Show"}
+                      {showToken[token.id] ? t('settings.tokens.hide') : t('settings.tokens.show')}
                     </button>
                   </div>
                 ),
               },
               {
-                header: "Actions",
+                header: t('settings.languages.actions'),
                 render: (token) => (
                   <div className="flex space-x-2">
                     <Button
@@ -332,18 +334,18 @@ const Settings = () => {
               },
             ]}
             data={tokens}
-            emptyMessage="No API tokens configured"
+            emptyMessage={t('settings.tokens.empty')}
           />
         </div>
       ),
     },
     {
-      label: "Affiliate Links",
+      label: t('settings.tabs.affiliateLinks'),
       icon: <HiLink className="w-5 h-5" />,
       content: (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Affiliate Links</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('settings.affiliates.title')}</h2>
             <Button
               variant="primary"
               size="sm"
@@ -354,19 +356,19 @@ const Settings = () => {
                 setAffiliateModal(true);
               }}
             >
-              Add Link
+              {t('settings.affiliates.add')}
             </Button>
           </div>
           <Table
             columns={[
-              { header: "Name", accessor: "name" },
-              { header: "Type", accessor: "link_type" },
+              { header: t('settings.affiliates.name'), accessor: "name" },
+              { header: t('settings.affiliates.type'), accessor: "link_type" },
               {
-                header: "Template",
+                header: t('settings.affiliates.template'),
                 render: (aff) => <span className="font-mono text-sm truncate max-w-xs block">{aff.link_template}</span>,
               },
               {
-                header: "Actions",
+                header: t('settings.languages.actions'),
                 render: (aff) => (
                   <div className="flex space-x-2">
                     <Button
@@ -392,18 +394,18 @@ const Settings = () => {
               },
             ]}
             data={affiliates}
-            emptyMessage="No affiliate links configured"
+            emptyMessage={t('settings.affiliates.empty')}
           />
         </div>
       ),
     },
     {
-      label: "Swiper Presets",
+      label: t('settings.tabs.swiperPresets'),
       icon: <HiCode className="w-5 h-5" />,
       content: (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Swiper Presets</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('settings.presets.title')}</h2>
             <Button
               variant="primary"
               size="sm"
@@ -413,21 +415,21 @@ const Settings = () => {
                 setPresetModal(true);
               }}
             >
-              Add Preset
+              {t('settings.presets.add')}
             </Button>
           </div>
           <Table
             columns={[
-              { header: "Name", accessor: "name" },
+              { header: t('settings.presets.name'), accessor: "name" },
               { 
-                header: "Slides", 
+                header: t('settings.presets.slides'), 
                 render: (preset) => (
-                  <Badge variant="gray">{preset.items?.length || 0} slides</Badge>
+                  <Badge variant="gray">{t('settings.presets.slidesCount', { count: preset.items?.length || 0 })}</Badge>
                 )
               },
-              { header: "Button Text", accessor: "button_text" },
+              { header: t('settings.presets.buttonText'), accessor: "button_text" },
               {
-                header: "Actions",
+                header: t('settings.languages.actions'),
                 render: (preset) => (
                   <div className="flex space-x-2">
                     <Button
@@ -452,7 +454,7 @@ const Settings = () => {
               },
             ]}
             data={presets}
-            emptyMessage="No swiper presets configured"
+            emptyMessage={t('settings.presets.empty')}
           />
         </div>
       ),
@@ -463,9 +465,9 @@ const Settings = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Manage languages, API tokens, and affiliate links
+          {t('settings.subtitle')}
         </p>
       </div>
 
@@ -477,31 +479,31 @@ const Settings = () => {
       <Modal
         isOpen={languageModal}
         onClose={() => setLanguageModal(false)}
-        title={currentLanguage ? "Edit Language" : "Add Language"}
+        title={currentLanguage ? t('settings.languages.editTitle') : t('settings.languages.addTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setLanguageModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleSaveLanguage}>
-              Save
+              {t('common.save')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Language Code"
+            label={t('settings.languages.codeLabel')}
             value={languageForm.code}
             onChange={(e) => setLanguageForm({ ...languageForm, code: e.target.value })}
-            placeholder="en-US"
+            placeholder={t('settings.languages.codePlaceholder')}
             required
           />
           <Input
-            label="Language Name"
+            label={t('settings.languages.nameLabel')}
             value={languageForm.name}
             onChange={(e) => setLanguageForm({ ...languageForm, name: e.target.value })}
-            placeholder="English (US)"
+            placeholder={t('settings.languages.namePlaceholder')}
             required
           />
           <div className="flex items-center">
@@ -513,7 +515,7 @@ const Settings = () => {
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="active" className="ml-2 text-sm text-gray-700">
-              Active
+              {t('settings.languages.activeLabel')}
             </label>
           </div>
         </div>
@@ -523,28 +525,28 @@ const Settings = () => {
       <Modal
         isOpen={tokenModal}
         onClose={() => setTokenModal(false)}
-        title={currentToken ? "Edit API Token" : "Add API Token"}
+        title={currentToken ? t('settings.tokens.editTitle') : t('settings.tokens.addTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setTokenModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleSaveToken}>
-              Save
+              {t('common.save')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Token Name"
+            label={t('settings.tokens.nameLabel')}
             value={tokenForm.name}
             onChange={(e) => setTokenForm({ ...tokenForm, name: e.target.value })}
-            placeholder="My Cloudflare Token"
+            placeholder={t('settings.tokens.namePlaceholder')}
             required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.tokens.serviceLabel')}</label>
             <select
               value={tokenForm.service_type}
               onChange={(e) => setTokenForm({ ...tokenForm, service_type: e.target.value })}
@@ -556,10 +558,10 @@ const Settings = () => {
             </select>
           </div>
           <Input
-            label="Token Value"
+            label={t('settings.tokens.valueLabel')}
             value={tokenForm.token_value}
             onChange={(e) => setTokenForm({ ...tokenForm, token_value: e.target.value })}
-            placeholder="Enter API token"
+            placeholder={t('settings.tokens.valuePlaceholder')}
             type="password"
             required
           />
@@ -570,28 +572,28 @@ const Settings = () => {
       <Modal
         isOpen={affiliateModal}
         onClose={() => setAffiliateModal(false)}
-        title={currentAffiliate ? "Edit Affiliate Link" : "Add Affiliate Link"}
+        title={currentAffiliate ? t('settings.affiliates.editTitle') : t('settings.affiliates.addTitle')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setAffiliateModal(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" onClick={handleSaveAffiliate}>
-              Save
+              {t('common.save')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <Input
-            label="Link Name"
+            label={t('settings.affiliates.nameLabel')}
             value={affiliateForm.name}
             onChange={(e) => setAffiliateForm({ ...affiliateForm, name: e.target.value })}
-            placeholder="Amazon Associates"
+            placeholder={t('settings.affiliates.namePlaceholder')}
             required
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Link Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.affiliates.typeLabel')}</label>
             <select
               value={affiliateForm.link_type}
               onChange={(e) => setAffiliateForm({ ...affiliateForm, link_type: e.target.value })}
@@ -602,16 +604,16 @@ const Settings = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Link Template</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.affiliates.templateLabel')}</label>
             <textarea
               value={affiliateForm.link_template}
               onChange={(e) => setAffiliateForm({ ...affiliateForm, link_template: e.target.value })}
-              placeholder="https://example.com?ref=YOUR_ID"
+              placeholder={t('settings.affiliates.templatePlaceholder')}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
-            <p className="mt-1 text-xs text-gray-500">Use {"{product_id}"} for dynamic parameters</p>
+            <p className="mt-1 text-xs text-gray-500">{t('settings.affiliates.templateHelp')}</p>
           </div>
         </div>
       </Modal>

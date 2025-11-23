@@ -1,10 +1,14 @@
+import { useTranslation } from 'react-i18next';
+
 const GeographicMap = ({ data }) => {
+  const { t } = useTranslation();
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Distribution</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.geographicDistribution')}</h3>
         <div className="flex items-center justify-center h-64 text-gray-400">
-          <p>No geographic data available</p>
+          <p>{t('analytics.noGeoData')}</p>
         </div>
       </div>
     );
@@ -33,8 +37,8 @@ const GeographicMap = ({ data }) => {
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Geographic Distribution</h3>
-      <p className="text-sm text-gray-600 mb-6">Top 10 countries by visitors</p>
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('analytics.geographicDistribution')}</h3>
+      <p className="text-sm text-gray-600 mb-6">{t('analytics.topCountries')}</p>
       
       <div className="space-y-4">
         {topCountries.map((country, index) => (
@@ -53,7 +57,7 @@ const GeographicMap = ({ data }) => {
                                             '🌍'}</span>
                 <div>
                   <p className="text-sm font-medium text-gray-900">{country.name}</p>
-                  <p className="text-xs text-gray-500">{country.visitors.toLocaleString()} visitors</p>
+                  <p className="text-xs text-gray-500">{country.visitors.toLocaleString()} {t('analytics.visitors')}</p>
                 </div>
               </div>
               <span className="text-sm font-semibold text-gray-700">
@@ -76,13 +80,13 @@ const GeographicMap = ({ data }) => {
         <div className="grid grid-cols-2 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-gray-900">{topCountries.length}</p>
-            <p className="text-xs text-gray-600">Countries</p>
+            <p className="text-xs text-gray-600">{t('analytics.countries')}</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-gray-900">
               {topCountries.reduce((sum, c) => sum + c.visitors, 0).toLocaleString()}
             </p>
-            <p className="text-xs text-gray-600">Total Visitors</p>
+            <p className="text-xs text-gray-600">{t('analytics.totalVisitors')}</p>
           </div>
         </div>
       </div>
